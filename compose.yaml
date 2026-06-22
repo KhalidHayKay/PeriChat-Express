@@ -1,0 +1,30 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_ENV: ${APP_ENV}
+    env_file:
+      - .env
+    image: perichat-express
+    container_name: perichat-express
+    restart: unless-stopped
+    working_dir: /var/www
+    ports:
+      - '${APP_PORT}:${APP_PORT}'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+  db:
+    image: postgres:16-alpine
+    container_name: perichat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - pgsql_data:/var/lib/postgresql/data
+
+volumes:
+  pgsql_data:

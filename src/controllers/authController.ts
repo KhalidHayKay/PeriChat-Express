@@ -1,33 +1,129 @@
 import type { Request, Response } from 'express';
+import { prisma } from '../../lib/prisma.js';
+import { validator } from '../validator/schema.js';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
+import bcrypt from 'bcrypt';
+import z from 'zod';
+import { sessionService } from '../services/sessionService.js';
 
 const authController = {
   async login(req: Request, res: Response) {
-    console.log(req.body);
+    const result = validator.login.safeParse(req.body);
 
-    const name = req.body['name'];
-
-    if (!name) {
-      res.statusCode = 422;
-      res.json({ message: 'name is required' });
-      return;
+    if (!result.success) {
+      return res.status(422).json({
+        message: 'Invalid request body',
+        errors: z.treeifyError(result.error).properties,
+      });
     }
 
-    res.json({ user_name: name });
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email: result.data.email },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatar: true,
+          emailVerifiedAt: true,
+
+          // Important to remove password from the data returned to the client
+          password: true,
+        },
+      });
+
+      const match = await bcrypt.compare(
+        result.data.password,
+        user?.password ?? '',
+      );
+
+      if (!user || !match) {
+        return res.status(401).json({
+          message: 'Invalid credentials. Please check your email or password.',
+        });
+      }
+
+      const { password, ...safeUserData } = user;
+
+      const token = await sessionService.create(String(user.id));
+
+      return res.json({
+        message: 'Login successful',
+        user: safeUserData,
+        token,
+      });
+    } catch (err: unknown) {
+      console.error(err);
+      return res.status(500).json({ message: 'interanl server error' });
+    }
   },
 
   async register(req: Request, res: Response) {
-    const name = req.body['name'];
-    const email = req.body['email'];
-    const password = req.body['password'];
-    const password_confirmation = req.body['password_confirmation'];
+    const result = validator.register.safeParse(req.body);
 
-    if (!name) {
-      res.statusCode = 422;
-      res.json({ message: 'name is required' });
-      return;
+    if (!result.success) {
+      return res.status(422).json({
+        message: 'Invalid request body',
+        errors: z.treeifyError(result.error).properties,
+      });
     }
 
-    res.json({ user_name: name });
+    const passwordHash = await bcrypt.hash(result.data.password, 12);
+
+    try {
+      const user = await prisma.user.create({
+        data: {
+          name: result.data.name,
+          email: result.data.email,
+          password: passwordHash,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatar: true,
+          emailVerifiedAt: true,
+        },
+      });
+
+      const token = await sessionService.create(String(user.id));
+
+      return res.status(201).json({
+        message: 'Registration successful',
+        user: user,
+        token,
+      });
+    } catch (err: unknown) {
+      if (
+        err instanceof PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        return res
+          .status(409)
+          .json({ message: 'User with submitted email already exists' });
+      }
+
+      console.error(err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  async logout(req: Request, res: Response) {
+    if (!req.authToken) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    try {
+      const result = await sessionService.destroy(req.authToken);
+      if (result === 1) {
+        return res.json({ message: 'Logout successful' });
+      } else {
+        return res.status(500).json({ message: 'Internal server error' });
+      }
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
   },
 };
 

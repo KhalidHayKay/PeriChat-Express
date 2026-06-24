@@ -1,20 +1,3 @@
-➤ YN0000: · Yarn 4.12.0
-➤ YN0000: ┌ Resolution step
-➤ YN0085: │ + prisma@npm:7.8.0, @electric-sql/pglite-socket@npm:0.1.1, @electric-sql/pglite-tools@npm:0.3.1, @electric-sql/pglite@npm:0.4.1, and 85 more.
-➤ YN0000: └ Completed in 2m 50s
-➤ YN0000: ┌ Post-resolution validation
-➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
-➤ YN0000: └ Completed
-➤ YN0000: ┌ Fetch step
-➤ YN0013: │ 89 packages were added to the project (+ 171.9 MiB).
-➤ YN0000: └ Completed in 1m 4s
-➤ YN0000: ┌ Link step
-➤ YN0000: │ ESM support for PnP uses the experimental loader API and is therefore experimental
-➤ YN0007: │ @prisma/engines@npm:7.8.0 must be built because it never has been before or the last one failed
-➤ YN0007: │ prisma@npm:7.8.0 [dc3fc] must be built because it never has been before or the last one failed
-➤ YN0000: └ Completed in 19s 111ms
-➤ YN0000: · Done with warnings in 4m 12s
-
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 

@@ -4,9 +4,10 @@ import { validator } from '../validator/schema.js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import bcrypt from 'bcrypt';
 import z from 'zod';
-import { sessionService } from '../services/sessionService.js';
+import { sessionService } from '../services/session.service.js';
+import type { AuthenticatedRequest } from '../types/request.js';
 
-const authController = {
+export const authController = {
   async login(req: Request, res: Response) {
     const result = validator.login.safeParse(req.body);
 
@@ -108,11 +109,7 @@ const authController = {
     }
   },
 
-  async logout(req: Request, res: Response) {
-    if (!req.authToken) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
+  async logout(req: AuthenticatedRequest, res: Response) {
     try {
       const result = await sessionService.destroy(req.authToken);
       if (result === 1) {
@@ -126,5 +123,3 @@ const authController = {
     }
   },
 };
-
-export default authController;

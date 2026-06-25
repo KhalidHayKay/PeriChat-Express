@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import { sessionService } from '../services/sessionService.js';
+import { sessionService } from '../services/session.service.js';
+import { userService } from '../services/user.service.js';
 
 export const authTokenValidator: RequestHandler = async (
   req: Request,
@@ -22,7 +23,17 @@ export const authTokenValidator: RequestHandler = async (
       return;
     }
 
+    let user;
+
+    try {
+      user = await userService.get(Number(userId));
+    } catch (err) {
+      res.status(401).json({ message: 'Request unauthorized' });
+      return;
+    }
+
     req.authToken = token;
+    req.user = user;
 
     next();
   } catch (error) {

@@ -53,5 +53,3 @@ export const env: EnvConfig = {
     origins: process.env['CORS_ORIGINS'] ?? 'localhost:8000,example.com',
   },
 };
-
-export default env;

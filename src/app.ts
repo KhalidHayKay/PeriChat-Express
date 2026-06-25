@@ -6,7 +6,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import compression from 'compression';
-import config from '../config/env.js';
+import { env } from '../config/env.js';
 
 dotenv.config();
 
@@ -16,7 +16,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: config.cors.origins,
+    origin: env.cors.origins,
     credentials: true,
   }),
 );

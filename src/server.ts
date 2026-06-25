@@ -1,12 +1,12 @@
-import config from '../config/env.js';
+import { env } from '../config/env.js';
 import { redis } from '../lib/redis.js';
 import app from './app.js';
 
-const server = app.listen(config.app.port, () => {
+const server = app.listen(env.app.port, () => {
   redis.connect();
 
-  console.info(`Server started and running on port ${config.app.port}`);
-  console.info(`Environment: ${config.app.env}`);
+  console.info(`Server started and running on port ${env.app.port}`);
+  console.info(`Environment: ${env.app.env}`);
 });
 
 const shutdown = (signal: string) => {

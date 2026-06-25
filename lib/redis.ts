@@ -1,7 +1,7 @@
-import config from '../config/env.js';
+import { env } from '../config/env.js';
 import { createClient } from 'redis';
 
-const client = createClient({ url: config.redis.url });
+const client = createClient({ url: env.redis.url });
 client.on('error', console.error);
 
 export const redis = {

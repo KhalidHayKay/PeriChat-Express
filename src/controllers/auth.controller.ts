@@ -1,15 +1,14 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { validator } from '../validator/schema.js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import bcrypt from 'bcrypt';
 import z from 'zod';
 import { sessionService } from '../services/session.service.js';
-import type { AuthenticatedRequest } from '../types/request.js';
 
 export const authController = {
-  async login(req: Request, res: Response) {
-    const result = validator.login.safeParse(req.body);
+  async login(req: Request, res: Response, next: NextFunction) {
+    const result = validator.auth.login.safeParse(req.body);
 
     if (!result.success) {
       return res.status(422).json({
@@ -54,13 +53,13 @@ export const authController = {
         token,
       });
     } catch (err: unknown) {
-      console.error(err);
-      return res.status(500).json({ message: 'interanl server error' });
+      next(err);
+      return;
     }
   },
 
-  async register(req: Request, res: Response) {
-    const result = validator.register.safeParse(req.body);
+  async register(req: Request, res: Response, next: NextFunction) {
+    const result = validator.auth.register.safeParse(req.body);
 
     if (!result.success) {
       return res.status(422).json({
@@ -104,22 +103,22 @@ export const authController = {
           .json({ message: 'User with submitted email already exists' });
       }
 
-      console.error(err);
-      return res.status(500).json({ message: 'Internal server error' });
+      next(err);
+      return;
     }
   },
 
-  async logout(req: AuthenticatedRequest, res: Response) {
+  async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await sessionService.destroy(req.authToken);
+      const result = await sessionService.destroy(req?.authToken!);
       if (result === 1) {
         return res.json({ message: 'Logout successful' });
       } else {
         return res.status(500).json({ message: 'Internal server error' });
       }
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Internal server error' });
+      next(err);
+      return;
     }
   },
 };

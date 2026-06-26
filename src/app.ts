@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import compression from 'compression';
 import { env } from '../config/env.js';
+import { errorHandler } from './errors/error.js';
 
 dotenv.config();
 
@@ -40,12 +41,11 @@ app.use('/api', routes);
 
 app.use((req, res) => {
   res.status(404).json({
-    error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,
   });
 });
 
 // Centralized error handling
-// app.use(errorHandler);
+app.use(errorHandler);
 
 export default app;

@@ -10,8 +10,8 @@ CREATE TABLE "users" (
     "email_verified_at" TIMESTAMP(0),
     "password" VARCHAR(255) NOT NULL,
     "remember_token" VARCHAR(100),
-    "created_at" TIMESTAMP(0),
-    "updated_at" TIMESTAMP(0),
+    "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(0) NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -24,8 +24,8 @@ CREATE TABLE "groups" (
     "avatar" VARCHAR(255),
     "is_private" BOOLEAN NOT NULL DEFAULT false,
     "owner_id" BIGINT NOT NULL,
-    "created_at" TIMESTAMP(0),
-    "updated_at" TIMESTAMP(0),
+    "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(0) NOT NULL,
 
     CONSTRAINT "groups_pkey" PRIMARY KEY ("id")
 );
@@ -38,8 +38,8 @@ CREATE TABLE "group_user" (
     "role" VARCHAR(255) NOT NULL DEFAULT 'member',
     "unread_messages_count" INTEGER NOT NULL DEFAULT 0,
     "blocked_at" TIMESTAMP(0),
-    "created_at" TIMESTAMP(0),
-    "updated_at" TIMESTAMP(0),
+    "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(0) NOT NULL,
 
     CONSTRAINT "group_user_pkey" PRIMARY KEY ("id")
 );
@@ -49,8 +49,8 @@ CREATE TABLE "conversations" (
     "id" BIGSERIAL NOT NULL,
     "group_id" BIGINT,
     "last_message_id" BIGINT,
-    "created_at" TIMESTAMP(0),
-    "updated_at" TIMESTAMP(0),
+    "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(0) NOT NULL,
 
     CONSTRAINT "conversations_pkey" PRIMARY KEY ("id")
 );
@@ -61,8 +61,8 @@ CREATE TABLE "user_conversation" (
     "user_id" BIGINT NOT NULL,
     "conversation_id" BIGINT NOT NULL,
     "unread_messages_count" INTEGER NOT NULL DEFAULT 0,
-    "created_at" TIMESTAMP(0),
-    "updated_at" TIMESTAMP(0),
+    "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(0) NOT NULL,
 
     CONSTRAINT "user_conversation_pkey" PRIMARY KEY ("id")
 );
@@ -73,9 +73,9 @@ CREATE TABLE "messages" (
     "message" TEXT,
     "sender_id" BIGINT NOT NULL,
     "receiver_id" BIGINT,
-    "conversation_id" BIGINT,
-    "created_at" TIMESTAMP(0),
-    "updated_at" TIMESTAMP(0),
+    "conversation_id" BIGINT NOT NULL,
+    "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(0) NOT NULL,
 
     CONSTRAINT "messages_pkey" PRIMARY KEY ("id")
 );
@@ -88,8 +88,8 @@ CREATE TABLE "message_attachments" (
     "path" VARCHAR(1024) NOT NULL,
     "mime" VARCHAR(225) NOT NULL,
     "size" INTEGER NOT NULL,
-    "created_at" TIMESTAMP(0),
-    "updated_at" TIMESTAMP(0),
+    "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(0) NOT NULL,
 
     CONSTRAINT "message_attachments_pkey" PRIMARY KEY ("id")
 );

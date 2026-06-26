@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { sessionService } from '../services/session.service.js';
 import { userService } from '../services/user.service.js';
 
-export const authTokenValidator: RequestHandler = async (
+export const authMiddleware: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction,

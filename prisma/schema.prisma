@@ -15,8 +15,8 @@ model User {
   emailVerifiedAt  DateTime?      @db.Timestamp(0) @map("email_verified_at")
   password         String         @db.VarChar(255) @map("password")
   rememberToken    String?        @db.VarChar(100) @map("remember_token")
-  createdAt        DateTime?      @db.Timestamp(0) @map("created_at")
-  updatedAt        DateTime?      @db.Timestamp(0) @map("updated_at")
+  createdAt        DateTime       @default(now()) @db.Timestamp(0) @map("created_at")
+  updatedAt        DateTime       @updatedAt @db.Timestamp(0) @map("updated_at")
 
   ownedGroups      Group[]        @relation("GroupOwner")
   groupUsers       GroupUser[]
@@ -34,8 +34,8 @@ model Group {
   avatar        String?        @db.VarChar(255) @map("avatar")
   isPrivate     Boolean        @default(false) @map("is_private")
   ownerId       BigInt         @map("owner_id")
-  createdAt     DateTime?      @db.Timestamp(0) @map("created_at")
-  updatedAt     DateTime?      @db.Timestamp(0) @map("updated_at")
+  createdAt     DateTime       @default(now()) @db.Timestamp(0) @map("created_at")
+  updatedAt     DateTime       @updatedAt @db.Timestamp(0) @map("updated_at")
 
   owner         User           @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   conversations Conversation[]
@@ -51,8 +51,8 @@ model GroupUser {
   role                String    @default("member") @db.VarChar(255) @map("role")
   unreadMessagesCount Int       @default(0) @map("unread_messages_count")
   blockedAt           DateTime? @db.Timestamp(0) @map("blocked_at")
-  createdAt           DateTime? @db.Timestamp(0) @map("created_at")
-  updatedAt           DateTime? @db.Timestamp(0) @map("updated_at")
+  createdAt           DateTime  @default(now()) @db.Timestamp(0) @map("created_at")
+  updatedAt           DateTime  @updatedAt @db.Timestamp(0) @map("updated_at")
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -64,8 +64,8 @@ model Conversation {
   id                BigInt             @id @default(autoincrement()) @map("id")
   groupId           BigInt?            @map("group_id")
   lastMessageId     BigInt?            @map("last_message_id") @unique
-  createdAt         DateTime?          @db.Timestamp(0) @map("created_at")
-  updatedAt         DateTime?          @db.Timestamp(0) @map("updated_at")
+  createdAt         DateTime           @default(now()) @db.Timestamp(0) @map("created_at")
+  updatedAt         DateTime           @updatedAt @db.Timestamp(0) @map("updated_at")
 
   group             Group?             @relation(fields: [groupId], references: [id], onDelete: NoAction)
   lastMessage       Message?           @relation("ConversationLastMessage", fields: [lastMessageId], references: [id], onDelete: NoAction)
@@ -80,8 +80,8 @@ model UserConversation {
   userId              BigInt        @map("user_id")
   conversationId      BigInt        @map("conversation_id")
   unreadMessagesCount Int           @default(0) @map("unread_messages_count")
-  createdAt           DateTime?     @db.Timestamp(0) @map("created_at")
-  updatedAt           DateTime?     @db.Timestamp(0) @map("updated_at")
+  createdAt           DateTime      @default(now()) @db.Timestamp(0) @map("created_at")
+  updatedAt           DateTime      @updatedAt @db.Timestamp(0) @map("updated_at")
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -94,9 +94,9 @@ model Message {
   content        String?        @map("message")
   senderId       BigInt         @map("sender_id")
   receiverId     BigInt?        @map("receiver_id")
-  conversationId BigInt?        @map("conversation_id")
-  createdAt      DateTime?      @db.Timestamp(0) @map("created_at")
-  updatedAt      DateTime?      @db.Timestamp(0) @map("updated_at")
+  conversationId BigInt         @map("conversation_id")
+  createdAt      DateTime       @default(now()) @db.Timestamp(0) @map("created_at")
+  updatedAt      DateTime       @updatedAt @db.Timestamp(0) @map("updated_at")
 
   sender         User           @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver       User?          @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: NoAction)
@@ -114,8 +114,8 @@ model MessageAttachment {
   path       String    @db.VarChar(1024) @map("path")
   mime       String    @db.VarChar(225) @map("mime")
   size       Int       @map("size")
-  createdAt  DateTime? @db.Timestamp(0) @map("created_at")
-  updatedAt  DateTime? @db.Timestamp(0) @map("updated_at")
+  createdAt  DateTime  @default(now()) @db.Timestamp(0) @map("created_at")
+  updatedAt  DateTime  @updatedAt @db.Timestamp(0) @map("updated_at")
 
   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 

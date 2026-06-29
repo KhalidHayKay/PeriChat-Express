@@ -4,39 +4,68 @@ import { groupService } from '../services/group.service.js';
 import { validator } from '../validator/schema.js';
 
 export const groupController = {
-  async index(req: Request, res: Response, next: NextFunction) {
+  async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const groups = await groupService.getJoinable(req.user!);
+      const result = validator.group.mew.safeParse(req.body);
 
-      return res.json({ message: 'Groups fetched successfully', data: groups });
+      if (!result.success) {
+        return res.status(422).json({
+          message: 'Invalid request body',
+          errors: z.treeifyError(result.error).properties,
+        });
+      }
+
+      const group = await groupService.make(result.data, req.user!);
+
+      return res
+        .status(201)
+        .json({ message: 'Group created successfully', data: group });
     } catch (error) {
       next(error);
       return;
     }
   },
 
-  async create(req: Request, res: Response) {
-    const result = validator.group.mew.safeParse(req.body);
+  async join(req: Request, res: Response, next: NextFunction) {
+    try {
+      const groupId = req.params['id']?.toString();
 
-    if (!result.success) {
-      return res.status(422).json({
-        message: 'Invalid request body',
-        errors: z.treeifyError(result.error).properties,
+      if (!groupId) {
+        return res.status(400).json({
+          message: 'Could not parse group id from URI parameter',
+        });
+      }
+
+      const group = await groupService.join(groupId, req.user!);
+
+      return res.json({
+        message: 'Operation successful',
+        data: group,
       });
+    } catch (error) {
+      next(error);
+      return;
     }
-
-    const group = await groupService.make(result.data, req.user!);
-
-    return res
-      .status(201)
-      .json({ message: 'Group created successfully', data: group });
   },
 
-  async join(_req: Request, _res: Response) {
-    //
-  },
+  async leave(req: Request, res: Response, next: NextFunction) {
+    try {
+      const groupId = req.params['id']?.toString();
 
-  async leave(_req: Request, _res: Response) {
-    //
+      if (!groupId) {
+        return res.status(400).json({
+          message: 'Could not parse group id from URI parameter',
+        });
+      }
+
+      await groupService.leave(groupId, req.user!);
+
+      return res.json({
+        message: 'Operation successful',
+      });
+    } catch (error) {
+      next(error);
+      return;
+    }
   },
 };

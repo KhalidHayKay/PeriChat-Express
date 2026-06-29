@@ -4,5 +4,6 @@ import { conversationController } from '../controllers/conversation.controller.j
 const router = Router();
 
 router.get('/', conversationController.get);
+router.get('/suggestions', conversationController.getSuggestions);
 
 export default router;

@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import type { ConversationSubject } from '../types/conversation.js';
+import type { User } from '../types/user.js';
 
 export const conversationService = {
   /**
@@ -140,5 +141,34 @@ export const conversationService = {
     }
 
     return results;
+  },
+
+  async getNonConversingUsers(user: User) {
+    const users = await prisma.user.findMany({
+      where: {
+        id: { not: user.id },
+        NOT: {
+          conversations: {
+            some: {
+              conversation: {
+                userConversations: {
+                  some: {
+                    userId: user.id,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+      },
+    });
+
+    return users;
   },
 };

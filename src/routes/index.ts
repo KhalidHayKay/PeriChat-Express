@@ -1,9 +1,9 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 import authRouter from './auth.routes.js';
 import conversationRouter from './conversation.routes.js';
 import messageRouter from './message.routes.js';
-import { authMiddleware } from '../middlewares/auth.middleware.js';
-import { groupController } from '../controllers/group.controller.js';
+import groupRouter from './message.routes.js';
 
 const router = Router();
 
@@ -13,7 +13,6 @@ router.use('/conversations', authMiddleware, conversationRouter);
 
 router.use('/messaging', authMiddleware, messageRouter);
 
-router.get('/groups', groupController.index);
-// router.get('/users', user)
+router.use('/group', authMiddleware, groupRouter);
 
 export default router;

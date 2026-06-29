@@ -52,4 +52,42 @@ export const groupService = {
 
     return { ...group, conversationId: conversation.id };
   },
+
+  async join(groupId: string, user: User) {
+    const group = await this.getById(groupId);
+
+    await prisma.groupUser.create({
+      data: {
+        userId: user.id,
+        groupId: group.id,
+      },
+    });
+
+    return group;
+  },
+
+  async leave(groupId: string, user: User) {
+    const group = await this.getById(groupId);
+
+    const deleted = await prisma.groupUser.deleteMany({
+      where: {
+        userId: user.id,
+        groupId: group.id,
+      },
+    });
+
+    if (deleted.count === 0) {
+      console.log("No record was deleted from 'groups'");
+    }
+
+    return;
+  },
+
+  async getById(id: string) {
+    const group = await prisma.group.findUniqueOrThrow({
+      where: { id: Number(id) },
+    });
+
+    return group;
+  },
 };

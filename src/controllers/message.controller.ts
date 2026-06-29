@@ -19,7 +19,7 @@ export const messageController = {
     }
 
     try {
-      const message = await messageService.new(result.data, req.user!);
+      const message = await messageService.make(result.data, req.user!);
       return res.status(201).json({
         message: 'Message created successfully',
         data: message,

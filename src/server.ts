@@ -1,8 +1,14 @@
+import { createServer } from 'http';
 import { env } from '../config/env.js';
 import { redis } from '../lib/redis.js';
 import app from './app.js';
+import { initSocket } from './socket.js';
 
-const server = app.listen(env.app.port, () => {
+const httpServer = createServer(app);
+
+initSocket(httpServer);
+
+const server = httpServer.listen(env.app.port, () => {
   redis.connect();
 
   console.info(`Server started and running on port ${env.app.port}`);

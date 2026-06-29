@@ -1,4 +1,4 @@
-import z from 'zod';
+import z, { string } from 'zod';
 
 const registerSchema = z
   .object({
@@ -47,6 +47,14 @@ const newMessageSchema = z
     },
   );
 
+const newGroupSchema = z.object({
+  name: z.string().min(1),
+  description: string().nullable().optional().default(null),
+  avatar: string().nullable().optional().default(null),
+  isPrivate: z.boolean().optional().default(false),
+  userIds: z.array(z.string()).optional().default([]),
+});
+
 export const validator = {
   auth: {
     register: registerSchema,
@@ -55,5 +63,9 @@ export const validator = {
 
   messaging: {
     new: newMessageSchema,
+  },
+
+  group: {
+    mew: newGroupSchema,
   },
 };

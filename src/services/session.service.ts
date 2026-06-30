@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { redis } from '../../lib/redis.js';
+import { redis } from '../lib/redis.js';
 
 export const sessionService = {
   async create(userId: string): Promise<string> {

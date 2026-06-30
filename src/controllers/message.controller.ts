@@ -27,7 +27,7 @@ export const messageController = {
     } catch (error) {
       if (error instanceof BadRequestError) {
         return res.status(400).json({
-          message: `invalid request. ${error.message}`,
+          message: `Invalid request. ${error.message}`,
         });
       }
 

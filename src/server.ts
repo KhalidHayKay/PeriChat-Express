@@ -1,27 +1,30 @@
 import { createServer } from 'http';
-import { env } from '../config/env.js';
-import { redis } from '../lib/redis.js';
+import { env } from './config/env.js';
+import { redis } from './lib/redis.js';
 import app from './app.js';
-import { initSocket } from './socket.js';
+import { socket } from './lib/socket.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const httpServer = createServer(app);
 
-initSocket(httpServer);
+socket.init(httpServer);
+
+await redis.connect();
 
 const server = httpServer.listen(env.app.port, () => {
-  redis.connect();
-
   console.info(`Server started and running on port ${env.app.port}`);
   console.info(`Environment: ${env.app.env}`);
 });
 
-const shutdown = (signal: string) => {
+const shutdown = async (signal: string) => {
   console.info(`${signal} received, starting graceful shutdown`);
 
-  server.close((err) => {
-    if (err) {
-      redis.disconnect();
+  server.close(async (err) => {
+    await redis.disconnect();
 
+    if (err) {
       console.error('Error during shutdown', err);
       process.exit(1);
     }

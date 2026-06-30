@@ -1,4 +1,4 @@
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../lib/prisma.js';
 import type { ConversationSubject } from '../types/conversation.js';
 import type { User } from '../types/user.js';
 

@@ -1,6 +1,5 @@
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../lib/prisma.js';
 import type { NewMessageAttachmentData, NewMessageData } from '../dtos/dto.js';
-import { getIO } from '../socket.js';
 import type { Attachment, Message } from '../types/message.js';
 import type { User } from '../types/user.js';
 
@@ -59,7 +58,12 @@ export const messageService = {
       data.message_attachments,
     );
 
-    const res = {
+    await prisma.conversation.update({
+      data: { lastMessageId: m.id },
+      where: { id: conversation.id },
+    });
+
+    const message = {
       id: m.id.toString(),
       content: m.content,
       conversation_id: m.conversationId.toString(),
@@ -71,9 +75,7 @@ export const messageService = {
       created_at: m.createdAt.toDateString(),
     };
 
-    getIO().emit(`CONVO:${conversation.id}`, res);
-
-    return res;
+    return message;
   },
 
   async resolveAttachments(

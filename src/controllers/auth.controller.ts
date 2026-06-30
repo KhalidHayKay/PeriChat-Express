@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../lib/prisma.js';
 import { validator } from '../validator/schema.js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import bcrypt from 'bcrypt';

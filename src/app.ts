@@ -1,15 +1,12 @@
 import express from 'express';
 
 import routes from './routes/index.js';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import compression from 'compression';
-import { env } from '../config/env.js';
+import { env } from './config/env.js';
 import { errorHandler } from './errors/error.js';
-
-dotenv.config();
 
 const app = express();
 

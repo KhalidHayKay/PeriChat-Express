@@ -14,15 +14,12 @@ export const messageService = {
       });
 
       const userIds = conversation.userConversations.map((uc) => uc.userId);
-      if (
-        !userIds.includes(user.id) ||
-        !userIds.includes(BigInt(data.receiver_id))
-      ) {
+      if (!userIds.includes(user.id) || !userIds.includes(data.receiver_id)) {
         throw new Error('Both users must be part of this conversation');
       }
 
       return this.createMessage(data, user, conversation, {
-        receiverId: Number(data.receiver_id),
+        receiverId: data.receiver_id,
         groupId: null,
       });
     }
@@ -41,8 +38,8 @@ export const messageService = {
   async createMessage(
     data: NewMessageData,
     user: User,
-    conversation: { id: bigint; groupId: bigint | null },
-    ids: { receiverId: number | null; groupId: bigint | null },
+    conversation: { id: number; groupId: number | null },
+    ids: { receiverId: number | null; groupId: number | null },
   ): Promise<Message> {
     const m = await prisma.message.create({
       data: {
@@ -64,12 +61,12 @@ export const messageService = {
     });
 
     const message = {
-      id: m.id.toString(),
+      id: m.id,
       content: m.content,
-      conversation_id: m.conversationId.toString(),
-      sender_id: m.senderId.toString(),
-      receiver_id: ids.receiverId?.toString() ?? null,
-      group_id: ids.groupId?.toString() ?? null,
+      conversation_id: m.conversationId,
+      sender_id: m.senderId,
+      receiver_id: ids.receiverId ?? null,
+      group_id: ids.groupId ?? null,
       sender: user,
       attachments,
       created_at: m.createdAt.toDateString(),
@@ -79,7 +76,7 @@ export const messageService = {
   },
 
   async resolveAttachments(
-    messageId: bigint,
+    messageId: number,
     files?: NewMessageAttachmentData[],
   ): Promise<Attachment[] | null> {
     if (!files || files.length === 0) {
@@ -107,8 +104,8 @@ export const messageService = {
       });
 
       attachments?.push({
-        id: newAttachment.id.toString(),
-        message_id: messageId.toString(),
+        id: newAttachment.id,
+        message_id: messageId,
         name: newAttachment.name,
         mime: newAttachment.mime,
         size: newAttachment.size,

@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id               BigInt         @id @default(autoincrement()) @map("id")
+  id               Int         @id @default(autoincrement()) @map("id")
   name             String         @db.VarChar(255) @map("name")
   email            String         @unique(map: "users_email_unique") @db.VarChar(255) @map("email")
   avatar           String?        @db.VarChar(255) @map("avatar")
@@ -28,12 +28,12 @@ model User {
 }
 
 model Group {
-  id            BigInt         @id @default(autoincrement()) @map("id")
+  id            Int         @id @default(autoincrement()) @map("id")
   name          String         @db.VarChar(255) @map("name")
   description   String?        @map("description")
   avatar        String?        @db.VarChar(255) @map("avatar")
   isPrivate     Boolean        @default(false) @map("is_private")
-  ownerId       BigInt         @map("owner_id")
+  ownerId       Int         @map("owner_id")
   createdAt     DateTime       @default(now()) @db.Timestamp(0) @map("created_at")
   updatedAt     DateTime       @updatedAt @db.Timestamp(0) @map("updated_at")
 
@@ -45,9 +45,9 @@ model Group {
 }
 
 model GroupUser {
-  id                  BigInt    @id @default(autoincrement()) @map("id")
-  groupId             BigInt    @map("group_id")
-  userId              BigInt    @map("user_id")
+  id                  Int    @id @default(autoincrement()) @map("id")
+  groupId             Int    @map("group_id")
+  userId              Int    @map("user_id")
   role                String    @default("member") @db.VarChar(255) @map("role")
   unreadMessagesCount Int       @default(0) @map("unread_messages_count")
   blockedAt           DateTime? @db.Timestamp(0) @map("blocked_at")
@@ -61,9 +61,9 @@ model GroupUser {
 }
 
 model Conversation {
-  id                BigInt             @id @default(autoincrement()) @map("id")
-  groupId           BigInt?            @map("group_id")
-  lastMessageId     BigInt?            @map("last_message_id") @unique
+  id                Int             @id @default(autoincrement()) @map("id")
+  groupId           Int?            @map("group_id")
+  lastMessageId     Int?            @map("last_message_id") @unique
   createdAt         DateTime           @default(now()) @db.Timestamp(0) @map("created_at")
   updatedAt         DateTime           @updatedAt @db.Timestamp(0) @map("updated_at")
 
@@ -76,9 +76,9 @@ model Conversation {
 }
 
 model UserConversation {
-  id                  BigInt        @id @default(autoincrement()) @map("id")
-  userId              BigInt        @map("user_id")
-  conversationId      BigInt        @map("conversation_id")
+  id                  Int        @id @default(autoincrement()) @map("id")
+  userId              Int        @map("user_id")
+  conversationId      Int        @map("conversation_id")
   unreadMessagesCount Int           @default(0) @map("unread_messages_count")
   createdAt           DateTime      @default(now()) @db.Timestamp(0) @map("created_at")
   updatedAt           DateTime      @updatedAt @db.Timestamp(0) @map("updated_at")
@@ -90,11 +90,11 @@ model UserConversation {
 }
 
 model Message {
-  id             BigInt         @id @default(autoincrement()) @map("id")
+  id             Int         @id @default(autoincrement()) @map("id")
   content        String?        @map("message")
-  senderId       BigInt         @map("sender_id")
-  receiverId     BigInt?        @map("receiver_id")
-  conversationId BigInt         @map("conversation_id")
+  senderId       Int         @map("sender_id")
+  receiverId     Int?        @map("receiver_id")
+  conversationId Int         @map("conversation_id")
   createdAt      DateTime       @default(now()) @db.Timestamp(0) @map("created_at")
   updatedAt      DateTime       @updatedAt @db.Timestamp(0) @map("updated_at")
 
@@ -108,8 +108,8 @@ model Message {
 }
 
 model MessageAttachment {
-  id         BigInt    @id @default(autoincrement()) @map("id")
-  messageId  BigInt    @map("message_id")
+  id         Int    @id @default(autoincrement()) @map("id")
+  messageId  Int    @map("message_id")
   name       String    @db.VarChar(255) @map("name")
   path       String    @db.VarChar(1024) @map("path")
   mime       String    @db.VarChar(225) @map("mime")

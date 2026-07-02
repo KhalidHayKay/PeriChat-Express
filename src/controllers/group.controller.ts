@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { groupService } from '../services/group.service.js';
 import { validator } from '../validator/schema.js';
+import { conversationService } from '../services/conversation.service.js';
 
 export const groupController = {
   async create(req: Request, res: Response, next: NextFunction) {
@@ -20,6 +21,22 @@ export const groupController = {
       return res
         .status(201)
         .json({ message: 'Group created successfully', data: group });
+    } catch (error) {
+      next(error);
+      return;
+    }
+  },
+
+  async getCandidates(req: Request, res: Response, next: NextFunction) {
+    try {
+      const candidates = await conversationService.getConversingUsers(
+        req.user!,
+      );
+
+      return res.json({
+        message: 'Operation successful',
+        data: candidates,
+      });
     } catch (error) {
       next(error);
       return;

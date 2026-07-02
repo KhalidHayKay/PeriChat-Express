@@ -7,7 +7,7 @@ export const conversationService = {
    * Get all conversation subjects (private + groups) for a user,
    * sorted by last message date (descending) then by name
    */
-  async getSubjects(userId: bigint): Promise<ConversationSubject[]> {
+  async getSubjects(userId: number): Promise<ConversationSubject[]> {
     const [privateConversations, groupConversations] = await Promise.all([
       this.getPrivateSubjects(userId),
       this.getGroupSubjects(userId),
@@ -17,8 +17,8 @@ export const conversationService = {
 
     // Sort by last_message_date descending, then by name
     return all.sort((a, b) => {
-      const dateA = a.last_message_date?.getTime() ?? 0;
-      const dateB = b.last_message_date?.getTime() ?? 0;
+      const dateA = a.last_message_date ? Date.parse(a.last_message_date) : 0;
+      const dateB = b.last_message_date ? Date.parse(b.last_message_date) : 0;
 
       if (dateB !== dateA) {
         return dateB - dateA; // descending
@@ -31,7 +31,7 @@ export const conversationService = {
   /**
    * Get private conversations for a user
    */
-  async getPrivateSubjects(userId: bigint): Promise<ConversationSubject[]> {
+  async getPrivateSubjects(userId: number): Promise<ConversationSubject[]> {
     const userConversations = await prisma.userConversation.findMany({
       where: {
         userId,
@@ -87,7 +87,7 @@ export const conversationService = {
         avatar: otherUser.avatar,
         last_message: lastMsg?.content ?? null,
         last_message_sender_id: lastMsg?.senderId ?? null,
-        last_message_date: lastMsg?.createdAt ?? null,
+        last_message_date: lastMsg?.createdAt.toISOString() ?? null,
         unread_messages_count: uc.unreadMessagesCount,
         last_message_attachment_count: lastMsg?.attachments.length ?? 0,
       });
@@ -99,7 +99,7 @@ export const conversationService = {
   /**
    * Get group conversations for a user
    */
-  async getGroupSubjects(userId: bigint): Promise<ConversationSubject[]> {
+  async getGroupSubjects(userId: number): Promise<ConversationSubject[]> {
     const groupUsers = await prisma.groupUser.findMany({
       where: { userId },
       include: {
@@ -134,7 +134,7 @@ export const conversationService = {
         avatar: gu.group.avatar,
         last_message: lastMsg?.content ?? null,
         last_message_sender_id: lastMsg?.senderId ?? null,
-        last_message_date: lastMsg?.createdAt ?? null,
+        last_message_date: lastMsg?.createdAt.toISOString() ?? null,
         unread_messages_count: gu.unreadMessagesCount,
         last_message_attachment_count: lastMsg?.attachments.length ?? 0,
       });
@@ -161,6 +161,34 @@ export const conversationService = {
           },
         },
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+      },
+    });
+
+    return users;
+  },
+
+  async getConversingUsers(user: User) {
+    const users = await prisma.user.findMany({
+      where: {
+        id: { not: user.id },
+        conversations: {
+          some: {
+            conversation: {
+              userConversations: {
+                some: {
+                  userId: user.id,
+                },
+              },
+            },
+          },
+        },
+      },
+
       select: {
         id: true,
         name: true,

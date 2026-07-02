@@ -22,7 +22,7 @@ interface EnvConfig {
   };
 
   cors: {
-    origins: string;
+    origins: string[];
   };
 }
 
@@ -50,6 +50,9 @@ export const env: EnvConfig = {
   },
 
   cors: {
-    origins: process.env['CORS_ORIGINS'] ?? 'localhost:8000,example.com',
+    origins: (process.env['CORS_ORIGINS'] ?? '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
   },
 };

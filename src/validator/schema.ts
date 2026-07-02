@@ -20,9 +20,9 @@ const loginSchema = z.object({
 const newMessageSchema = z
   .object({
     content: z.string().max(5000).optional(),
-    conversation_id: z.string(),
-    receiver_id: z.string().optional(),
-    group_id: z.string().optional(),
+    conversation_id: z.number(),
+    receiver_id: z.number().optional(),
+    group_id: z.number().optional(),
     message_attachments: z
       .array(
         z.object({

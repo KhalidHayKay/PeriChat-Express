@@ -1,10 +1,11 @@
 import { prisma } from '../lib/prisma.js';
+// import { redis } from '../lib/redis.js';
 import type { User } from '../types/user.js';
 
 export const userService = {
-  async get(id: bigint | number): Promise<User> {
+  async get(id: number): Promise<User> {
     const user = await prisma.user.findFirstOrThrow({
-      where: { id: typeof id === 'bigint' ? id : BigInt(id) },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -16,4 +17,8 @@ export const userService = {
 
     return user;
   },
+
+  // getOnlineUsers() {
+  //   const users = redis.
+  // }
 };

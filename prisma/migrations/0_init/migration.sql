@@ -3,7 +3,7 @@ CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateTable
 CREATE TABLE "users" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
     "avatar" VARCHAR(255),
@@ -18,12 +18,12 @@ CREATE TABLE "users" (
 
 -- CreateTable
 CREATE TABLE "groups" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "description" TEXT,
     "avatar" VARCHAR(255),
     "is_private" BOOLEAN NOT NULL DEFAULT false,
-    "owner_id" BIGINT NOT NULL,
+    "owner_id" INTEGER NOT NULL,
     "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(0) NOT NULL,
 
@@ -32,9 +32,9 @@ CREATE TABLE "groups" (
 
 -- CreateTable
 CREATE TABLE "group_user" (
-    "id" BIGSERIAL NOT NULL,
-    "group_id" BIGINT NOT NULL,
-    "user_id" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "group_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
     "role" VARCHAR(255) NOT NULL DEFAULT 'member',
     "unread_messages_count" INTEGER NOT NULL DEFAULT 0,
     "blocked_at" TIMESTAMP(0),
@@ -46,9 +46,9 @@ CREATE TABLE "group_user" (
 
 -- CreateTable
 CREATE TABLE "conversations" (
-    "id" BIGSERIAL NOT NULL,
-    "group_id" BIGINT,
-    "last_message_id" BIGINT,
+    "id" SERIAL NOT NULL,
+    "group_id" INTEGER,
+    "last_message_id" INTEGER,
     "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(0) NOT NULL,
 
@@ -57,9 +57,9 @@ CREATE TABLE "conversations" (
 
 -- CreateTable
 CREATE TABLE "user_conversation" (
-    "id" BIGSERIAL NOT NULL,
-    "user_id" BIGINT NOT NULL,
-    "conversation_id" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "conversation_id" INTEGER NOT NULL,
     "unread_messages_count" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(0) NOT NULL,
@@ -69,11 +69,11 @@ CREATE TABLE "user_conversation" (
 
 -- CreateTable
 CREATE TABLE "messages" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "message" TEXT,
-    "sender_id" BIGINT NOT NULL,
-    "receiver_id" BIGINT,
-    "conversation_id" BIGINT NOT NULL,
+    "sender_id" INTEGER NOT NULL,
+    "receiver_id" INTEGER,
+    "conversation_id" INTEGER NOT NULL,
     "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(0) NOT NULL,
 
@@ -82,8 +82,8 @@ CREATE TABLE "messages" (
 
 -- CreateTable
 CREATE TABLE "message_attachments" (
-    "id" BIGSERIAL NOT NULL,
-    "message_id" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "message_id" INTEGER NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "path" VARCHAR(1024) NOT NULL,
     "mime" VARCHAR(225) NOT NULL,

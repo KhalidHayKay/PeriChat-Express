@@ -26,10 +26,6 @@ app.use(compression({ threshold: 1024 }));
 
 app.use(morgan('dev'));
 
-app.set('json replacer', (_key: string, value: unknown) =>
-  typeof value === 'bigint' ? value.toString() : value,
-);
-
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });

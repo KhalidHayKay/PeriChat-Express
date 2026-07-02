@@ -16,6 +16,8 @@ export const redis = {
       ttl ? { expiration: { type: 'EX', value: ttl } } : undefined,
     ),
 
+  // sSet: (key: string) => client.sAdd(key, String(userId)),
+
   delete: (key: string) => client.del(key),
 
   disconnect: () => client.quit(),

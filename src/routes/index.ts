@@ -3,7 +3,7 @@ import { authMiddleware } from '../middlewares/auth.middleware.js';
 import authRouter from './auth.routes.js';
 import conversationRouter from './conversation.routes.js';
 import messageRouter from './message.routes.js';
-import groupRouter from './message.routes.js';
+import groupRouter from './group.routes.js';
 
 const router = Router();
 

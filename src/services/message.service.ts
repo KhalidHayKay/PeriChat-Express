@@ -1,7 +1,12 @@
 import { prisma } from '../lib/prisma.js';
-import type { NewMessageAttachmentData, NewMessageData } from '../dtos/dto.js';
+import type {
+  NewMessageAttachmentData,
+  NewMessageData,
+  NewMessageWithConversationData,
+} from '../dtos/dto.js';
 import type { Attachment, Message } from '../types/message.js';
 import type { User } from '../types/user.js';
+import type { ConversationSubject } from '../types/conversation.js';
 
 export const messageService = {
   async make(data: NewMessageData, user: User): Promise<Message> {
@@ -18,10 +23,16 @@ export const messageService = {
         throw new Error('Both users must be part of this conversation');
       }
 
-      return this.createMessage(data, user, conversation, {
-        receiverId: data.receiver_id,
-        groupId: null,
-      });
+      return this.createMessage(
+        user,
+        conversation,
+        {
+          receiverId: data.receiver_id,
+          groupId: null,
+        },
+        data.content,
+        data.message_attachments,
+      );
     }
 
     const conversation = await prisma.conversation.findFirstOrThrow({
@@ -29,31 +40,87 @@ export const messageService = {
       select: { id: true, groupId: true },
     });
 
-    return this.createMessage(data, user, conversation, {
-      receiverId: null,
-      groupId: conversation.groupId,
+    return this.createMessage(
+      user,
+      conversation,
+      {
+        receiverId: null,
+        groupId: conversation.groupId,
+      },
+      data.content,
+      data.message_attachments,
+    );
+  },
+
+  async makeWithNewConversation(
+    data: NewMessageWithConversationData,
+    user: User,
+  ): Promise<{ subject: ConversationSubject; message: Message }> {
+    const conversation = await prisma.conversation.create({
+      data: { groupId: null },
     });
+
+    const receiver = await prisma.user.findUniqueOrThrow({
+      where: { id: data.receiver_id },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        email: true,
+      },
+    });
+
+    await prisma.userConversation.createMany({
+      data: [user.id, data.receiver_id].map((id) => ({
+        userId: id,
+        conversationId: conversation.id,
+      })),
+    });
+
+    const message = await this.createMessage(
+      user,
+      conversation,
+      {
+        receiverId: data.receiver_id,
+        groupId: null,
+      },
+      data.content,
+      data.message_attachments,
+    );
+
+    const subject: ConversationSubject = {
+      type: 'private',
+      id: conversation.id,
+      type_id: receiver.id,
+      name: receiver.name,
+      avatar: receiver.avatar,
+      last_message: message.content,
+      last_message_sender_id: user.id,
+      last_message_date: message.created_at,
+      unread_messages_count: 0,
+      last_message_attachment_count: message.attachments?.length ?? 0,
+    };
+
+    return { subject, message };
   },
 
   async createMessage(
-    data: NewMessageData,
     user: User,
     conversation: { id: number; groupId: number | null },
     ids: { receiverId: number | null; groupId: number | null },
+    content?: string,
+    attachmentData?: NewMessageAttachmentData[],
   ): Promise<Message> {
     const m = await prisma.message.create({
       data: {
-        content: data.content ?? null,
+        content: content ?? null,
         senderId: Number(user.id),
         receiverId: ids.receiverId,
         conversationId: conversation.id,
       },
     });
 
-    const attachments = await this.resolveAttachments(
-      m.id,
-      data.message_attachments,
-    );
+    const attachments = await this.resolveAttachments(m.id, attachmentData);
 
     await prisma.conversation.update({
       data: { lastMessageId: m.id },
@@ -69,7 +136,7 @@ export const messageService = {
       group_id: ids.groupId ?? null,
       sender: user,
       attachments,
-      created_at: m.createdAt.toDateString(),
+      created_at: m.createdAt.toUTCString(),
     };
 
     return message;

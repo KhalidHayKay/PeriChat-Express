@@ -4,7 +4,6 @@ import { env } from '../config/env.js';
 import { sessionService } from '../services/session.service.js';
 import { userService } from '../services/user.service.js';
 import type { User } from '../types/user.js';
-// import { redis } from './redis.js';
 
 let io: Server;
 
@@ -28,6 +27,7 @@ export const socket = {
 
       try {
         const user = await userService.get(Number(userId));
+        await userService.addOnlineUser(user.id);
         socket.data.user = user;
         next();
       } catch (error) {
@@ -38,20 +38,20 @@ export const socket = {
     io.on('connection', async (socket) => {
       const user = socket.data.user as User;
 
-      // Add user to online set and get all online users
-      // await redis.addOnlineUser(user.id);
-      // const onlineUsers = await redis.getOnlineUsers();
+      const onlineUserIds = await userService.getOnlineUserIds();
 
-      io.emit('user:online', {
-        userId: user.id,
-        // onlineUserIds: onlineUsers,
+      socket.emit('users:online', onlineUserIds);
+
+      socket.broadcast.emit('user:online', { userId: user.id });
+
+      socket.on('disconnect', async () => {
+        await userService.removeOnlineUser(user.id);
+        io.emit('user:offline', { userId: user.id });
+
+        console.log(`Client disconnected: ${socket.id}`);
       });
 
       console.log(`Client connected: ${socket.id}`);
-      socket.on('disconnect', async () => {
-        // await redis.removeOnlineUser(user.id);
-        console.log(`Client disconnected: ${socket.id}`);
-      });
     });
   },
 

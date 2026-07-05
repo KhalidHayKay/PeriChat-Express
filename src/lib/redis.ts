@@ -16,7 +16,19 @@ export const redis = {
       ttl ? { expiration: { type: 'EX', value: ttl } } : undefined,
     ),
 
-  // sSet: (key: string) => client.sAdd(key, String(userId)),
+  sAdd: (key: string, value: number | string) =>
+    client.sAdd(key, String(value)),
+
+  sRem: (key: string, value: number | string) =>
+    client.sRem(key, String(value)),
+
+  sMembers: async (key: string) => {
+    const members = await client.sMembers(key);
+
+    return members
+      .map((member) => Number(member))
+      .filter((member) => !Number.isNaN(member));
+  },
 
   delete: (key: string) => client.del(key),
 

@@ -1,11 +1,23 @@
-import { z } from 'zod';
-import type { validator } from '../validator/schema.js';
+export type NewMessageAttachmentData = {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer<ArrayBufferLike>;
+};
 
-export type NewMessageData = z.infer<typeof validator.messaging.new>;
+export type NewMessageData = {
+  conversation_id: number;
+  content?: string | undefined;
+  receiver_id?: number | undefined;
+  group_id?: number | undefined;
+  message_attachments?: NewMessageAttachmentData[] | undefined;
+};
 
-export type NewMessageAttachmentData = NonNullable<
-  NewMessageData['message_attachments']
->[number];
+export type NewMessageWithConversationData = {
+  content?: string | undefined;
+  receiver_id: number;
+  message_attachments?: NewMessageAttachmentData[] | undefined;
+};
 
 export type NewGroupData = {
   name: string;

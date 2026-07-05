@@ -20,9 +20,9 @@ const loginSchema = z.object({
 const newMessageSchema = z
   .object({
     content: z.string().max(5000).optional(),
-    conversation_id: z.number(),
-    receiver_id: z.number().optional(),
-    group_id: z.number().optional(),
+    conversation_id: z.string(),
+    receiver_id: z.string().optional(),
+    group_id: z.string().optional(),
     message_attachments: z
       .array(
         z.object({
@@ -38,6 +38,30 @@ const newMessageSchema = z
   .refine((data) => data.group_id || data.receiver_id, {
     message: 'Either group_id or receiver_id must be provided',
     path: ['group_id'],
+  })
+  .refine(
+    (data) => data.content || (data.message_attachments?.length ?? 0) > 0,
+    {
+      message: 'Either content or at least one attachment must be provided',
+      path: ['content'],
+    },
+  );
+
+const firstMessageSchema = z
+  .object({
+    content: z.string().max(5000).optional(),
+    receiver_id: z.string(),
+    message_attachments: z
+      .array(
+        z.object({
+          originalname: z.string(),
+          mimetype: z.string(),
+          size: z.number().max(102400),
+          buffer: z.instanceof(Buffer),
+        }),
+      )
+      .max(10)
+      .optional(),
   })
   .refine(
     (data) => data.content || (data.message_attachments?.length ?? 0) > 0,
@@ -63,9 +87,10 @@ export const validator = {
 
   messaging: {
     new: newMessageSchema,
+    first: firstMessageSchema,
   },
 
   group: {
-    mew: newGroupSchema,
+    new: newGroupSchema,
   },
 };

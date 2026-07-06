@@ -27,19 +27,17 @@ export const groupService = {
         name: data.name,
         description: data.description,
         avatar: data.avatar,
-        isPrivate: data.isPrivate,
+        isPrivate: data.is_private,
       },
     });
 
-    const memberUserIds = data.userIds.filter(
-      (id) => id !== user.id.toString(),
-    );
+    const memberIds = [...new Set([...data.member_ids, user.id])];
 
-    if (memberUserIds.length > 0) {
+    if (memberIds.length > 0) {
       await prisma.groupUser.createMany({
-        data: memberUserIds.map((memberId) => ({
+        data: memberIds.map((memberId) => ({
           groupId: group.id,
-          userId: Number(memberId),
+          userId: memberId,
         })),
       });
     }
@@ -50,7 +48,17 @@ export const groupService = {
       },
     });
 
-    return { ...group, conversationId: conversation.id };
+    return {
+      id: group.id,
+      name: group.name,
+      avatar: group.avatar,
+      description: group.description,
+      is_private: group.isPrivate,
+      member_user_ids: memberIds,
+      owner: user,
+      created_at: group.createdAt.toISOString(),
+      conversation_id: conversation.id,
+    };
   },
 
   async join(groupId: string, user: User) {
@@ -63,7 +71,21 @@ export const groupService = {
       },
     });
 
-    return group;
+    const conversation = await prisma.conversation.findFirstOrThrow({
+      where: { groupId: group.id },
+      select: { id: true },
+    });
+
+    return {
+      id: group.id,
+      name: group.name,
+      avatar: group.avatar,
+      description: group.description,
+      is_private: group.isPrivate,
+      member_ids: group.groupUsers.map((gu) => gu.userId),
+      created_at: group.createdAt.toISOString(),
+      conversation_id: conversation.id,
+    };
   },
 
   async leave(groupId: string, user: User) {
@@ -86,6 +108,14 @@ export const groupService = {
   async getById(id: string) {
     const group = await prisma.group.findUniqueOrThrow({
       where: { id: Number(id) },
+      include: {
+        // owner: true,
+        groupUsers: {
+          select: {
+            userId: true,
+          },
+        },
+      },
     });
 
     return group;

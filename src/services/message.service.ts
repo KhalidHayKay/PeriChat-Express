@@ -136,7 +136,7 @@ export const messageService = {
       group_id: ids.groupId ?? null,
       sender: user,
       attachments,
-      created_at: m.createdAt.toUTCString(),
+      created_at: m.createdAt.toISOString(),
     };
 
     return message;

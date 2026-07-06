@@ -1,12 +1,25 @@
 import { prisma } from '../lib/prisma.js';
+import type { Prisma } from '../../generated/prisma/client.js';
 import type { ConversationSubject } from '../types/conversation.js';
+import type { Message as MessageDto } from '../types/message.js';
 import type { User } from '../types/user.js';
 
+type PrismaMessageWithSenderAndAttachments = Prisma.MessageGetPayload<{
+  include: {
+    sender: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        avatar: true;
+        emailVerifiedAt: true;
+      };
+    };
+    attachments: true;
+  };
+}>;
+
 export const conversationService = {
-  /**
-   * Get all conversation subjects (private + groups) for a user,
-   * sorted by last message date (descending) then by name
-   */
   async getSubjects(userId: number): Promise<ConversationSubject[]> {
     const [privateConversations, groupConversations] = await Promise.all([
       this.getPrivateSubjects(userId),
@@ -28,9 +41,194 @@ export const conversationService = {
     });
   },
 
-  /**
-   * Get private conversations for a user
-   */
+  async getMessages(id: number, user: User, limit = 20) {
+    const conversation = await this.findConversationWithAccess(id, user);
+
+    const messages = await prisma.message.findMany({
+      where: { conversationId: conversation.id },
+      orderBy: { id: 'desc' },
+      take: limit + 1,
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            emailVerifiedAt: true,
+          },
+        },
+        attachments: true,
+      },
+    });
+
+    const hasMore = messages.length > limit;
+    const pageMessages = hasMore ? messages.slice(0, limit) : messages;
+
+    return {
+      messages: this.mapMessages(pageMessages.reverse(), conversation.groupId),
+      hasMore,
+    };
+  },
+
+  async getOlderMessages(
+    id: number,
+    lastMessageId: number,
+    user: User,
+    limit = 10,
+  ) {
+    const conversation = await this.findConversationWithAccess(id, user);
+
+    const messages = await prisma.message.findMany({
+      where: { conversationId: conversation.id },
+      orderBy: { id: 'desc' },
+      cursor: { id: lastMessageId },
+      skip: 1,
+      take: limit + 1,
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            emailVerifiedAt: true,
+          },
+        },
+        attachments: true,
+      },
+    });
+
+    const hasMore = messages.length > limit;
+    const pageMessages = hasMore ? messages.slice(0, limit) : messages;
+
+    return {
+      messages: this.mapMessages(pageMessages.reverse(), conversation.groupId),
+      hasMore,
+    };
+  },
+
+  async findConversationWithAccess(id: number, user: User) {
+    return prisma.conversation.findFirstOrThrow({
+      where: {
+        id,
+        OR: [
+          {
+            groupId: null,
+            userConversations: {
+              some: {
+                userId: user.id,
+              },
+            },
+          },
+          {
+            groupId: {
+              not: null,
+            },
+            group: {
+              groupUsers: {
+                some: {
+                  userId: user.id,
+                },
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        groupId: true,
+      },
+    });
+  },
+
+  mapMessages(
+    messages: PrismaMessageWithSenderAndAttachments[],
+    groupId: number | null,
+  ): MessageDto[] {
+    return messages.map((message) => ({
+      id: message.id,
+      content: message.content,
+      conversation_id: message.conversationId,
+      sender_id: message.senderId,
+      receiver_id: message.receiverId,
+      group_id: groupId,
+      sender: {
+        id: message.sender.id,
+        name: message.sender.name,
+        email: message.sender.email,
+        avatar: message.sender.avatar,
+        emailVerifiedAt: message.sender.emailVerifiedAt,
+      },
+      attachments: message.attachments.map((attachment) => ({
+        id: attachment.id,
+        message_id: attachment.messageId,
+        name: attachment.name,
+        mime: attachment.mime,
+        size: attachment.size,
+        url: attachment.path,
+      })),
+      created_at: message.createdAt.toISOString(),
+    }));
+  },
+
+  async getNonConversingUsers(user: User) {
+    const users = await prisma.user.findMany({
+      where: {
+        id: { not: user.id },
+        NOT: {
+          conversations: {
+            some: {
+              conversation: {
+                userConversations: {
+                  some: {
+                    userId: user.id,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+      },
+    });
+
+    return users;
+  },
+
+  async getConversingUsers(user: User) {
+    const users = await prisma.user.findMany({
+      where: {
+        id: { not: user.id },
+        conversations: {
+          some: {
+            conversation: {
+              userConversations: {
+                some: {
+                  userId: user.id,
+                },
+              },
+            },
+          },
+        },
+      },
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+      },
+    });
+
+    return users;
+  },
+
   async getPrivateSubjects(userId: number): Promise<ConversationSubject[]> {
     const userConversations = await prisma.userConversation.findMany({
       where: {
@@ -96,9 +294,6 @@ export const conversationService = {
     return results;
   },
 
-  /**
-   * Get group conversations for a user
-   */
   async getGroupSubjects(userId: number): Promise<ConversationSubject[]> {
     const groupUsers = await prisma.groupUser.findMany({
       where: { userId },
@@ -141,62 +336,5 @@ export const conversationService = {
     }
 
     return results;
-  },
-
-  async getNonConversingUsers(user: User) {
-    const users = await prisma.user.findMany({
-      where: {
-        id: { not: user.id },
-        NOT: {
-          conversations: {
-            some: {
-              conversation: {
-                userConversations: {
-                  some: {
-                    userId: user.id,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatar: true,
-      },
-    });
-
-    return users;
-  },
-
-  async getConversingUsers(user: User) {
-    const users = await prisma.user.findMany({
-      where: {
-        id: { not: user.id },
-        conversations: {
-          some: {
-            conversation: {
-              userConversations: {
-                some: {
-                  userId: user.id,
-                },
-              },
-            },
-          },
-        },
-      },
-
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatar: true,
-      },
-    });
-
-    return users;
   },
 };

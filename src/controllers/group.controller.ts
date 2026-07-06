@@ -7,7 +7,7 @@ import { conversationService } from '../services/conversation.service.js';
 export const groupController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = validator.group.mew.safeParse(req.body);
+      const result = validator.group.new.safeParse(req.body);
 
       if (!result.success) {
         return res.status(422).json({
@@ -44,19 +44,19 @@ export const groupController = {
   },
 
   async join(req: Request, res: Response, next: NextFunction) {
+    const groupId = req.params['id']?.toString();
+
+    if (!groupId) {
+      return res.status(400).json({
+        message: 'Could not parse group id from URI parameter',
+      });
+    }
+
     try {
-      const groupId = req.params['id']?.toString();
-
-      if (!groupId) {
-        return res.status(400).json({
-          message: 'Could not parse group id from URI parameter',
-        });
-      }
-
       const group = await groupService.join(groupId, req.user!);
 
       return res.json({
-        message: 'Operation successful',
+        message: 'Group joined successful',
         data: group,
       });
     } catch (error) {
@@ -66,15 +66,15 @@ export const groupController = {
   },
 
   async leave(req: Request, res: Response, next: NextFunction) {
+    const groupId = req.params['id']?.toString();
+
+    if (!groupId) {
+      return res.status(400).json({
+        message: 'Could not parse group id from URI parameter',
+      });
+    }
+
     try {
-      const groupId = req.params['id']?.toString();
-
-      if (!groupId) {
-        return res.status(400).json({
-          message: 'Could not parse group id from URI parameter',
-        });
-      }
-
       await groupService.leave(groupId, req.user!);
 
       return res.json({

@@ -75,8 +75,8 @@ const newGroupSchema = z.object({
   name: z.string().min(1),
   description: string().nullable().optional().default(null),
   avatar: string().nullable().optional().default(null),
-  isPrivate: z.boolean().optional().default(false),
-  userIds: z.array(z.string()).optional().default([]),
+  is_private: z.boolean().optional().default(false),
+  member_ids: z.array(z.number()),
 });
 
 export const validator = {

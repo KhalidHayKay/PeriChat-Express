@@ -23,7 +23,7 @@ export type NewGroupData = {
   name: string;
   description: string | null;
   avatar: string | null;
-  isPrivate: boolean;
+  is_private: boolean;
 
-  userIds: string[];
+  member_ids: number[];
 };

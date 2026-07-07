@@ -120,4 +120,13 @@ export const groupService = {
 
     return group;
   },
+
+  async getMembersIds(groupId: number) {
+    const groupUsers = await prisma.groupUser.findMany({
+      select: { userId: true },
+      where: { groupId },
+    });
+
+    return groupUsers.map((gu) => gu.userId);
+  },
 };

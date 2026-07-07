@@ -5,7 +5,7 @@ export const sessionService = {
   async create(userId: string): Promise<string> {
     const token = `auth_${generateAuthToken()}`;
 
-    await redis.set(`session:${token}`, userId, 3600);
+    await redis.set(`session:${token}`, userId);
 
     return token;
   },

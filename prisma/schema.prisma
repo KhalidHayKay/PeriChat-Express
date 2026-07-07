@@ -57,6 +57,7 @@ model GroupUser {
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([groupId, userId])
   @@map("group_user")
 }
 
@@ -86,6 +87,7 @@ model UserConversation {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
+  @@unique([conversationId, userId])
   @@map("user_conversation")
 }
 

@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import type { ConversationSubject } from '../types/conversation.js';
-import type { Message as MessageDto } from '../types/message.js';
+import type { Message, Message as MessageDto } from '../types/message.js';
 import type { User } from '../types/user.js';
 
 type PrismaMessageWithSenderAndAttachments = Prisma.MessageGetPayload<{
@@ -227,6 +227,66 @@ export const conversationService = {
     });
 
     return users;
+  },
+
+  async incrementUnread(userId: number, message: Message) {
+    if (message.receiver_id) {
+      await prisma.userConversation.update({
+        data: {
+          unreadMessagesCount: {
+            increment: 1,
+          },
+        },
+        where: {
+          conversationId_userId: {
+            conversationId: message.conversation_id,
+            userId,
+          },
+        },
+      });
+      return;
+    }
+
+    await prisma.groupUser.update({
+      data: { unreadMessagesCount: { increment: 1 } },
+      where: {
+        groupId_userId: {
+          groupId: message.group_id!,
+          userId,
+        },
+      },
+    });
+  },
+
+  async resetUnread(
+    conversationType: 'private' | 'group',
+    typeId: number,
+    userId: number,
+  ) {
+    if (conversationType === 'private') {
+      await prisma.userConversation.update({
+        data: {
+          unreadMessagesCount: 0,
+        },
+        where: {
+          conversationId_userId: {
+            conversationId: typeId,
+            userId,
+          },
+        },
+      });
+      return;
+    }
+
+    await prisma.groupUser.update({
+      data: { unreadMessagesCount: 0 },
+      where: {
+        groupId_userId: {
+          groupId: typeId,
+          userId,
+        },
+      },
+    });
   },
 
   async getPrivateSubjects(userId: number): Promise<ConversationSubject[]> {

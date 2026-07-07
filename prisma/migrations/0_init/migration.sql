@@ -98,7 +98,13 @@ CREATE TABLE "message_attachments" (
 CREATE UNIQUE INDEX "users_email_unique" ON "users"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "group_user_group_id_user_id_key" ON "group_user"("group_id", "user_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "conversations_last_message_id_key" ON "conversations"("last_message_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "user_conversation_conversation_id_user_id_key" ON "user_conversation"("conversation_id", "user_id");
 
 -- AddForeignKey
 ALTER TABLE "groups" ADD CONSTRAINT "groups_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import type { NewGroupData } from '../dtos/dto.js';
-import type { User } from '../types/user.js';
+import { publicUserSelect, type User } from '../types/user.js';
+import type { Group } from '../types/group.js';
 
 export const groupService = {
   async getJoinable(user: User) {
@@ -20,7 +21,7 @@ export const groupService = {
     });
   },
 
-  async make(data: NewGroupData, user: User) {
+  async make(data: NewGroupData, user: User): Promise<Group> {
     const group = await prisma.group.create({
       data: {
         ownerId: user.id,
@@ -54,14 +55,14 @@ export const groupService = {
       avatar: group.avatar,
       description: group.description,
       is_private: group.isPrivate,
-      member_user_ids: memberIds,
+      member_ids: memberIds,
       owner: user,
       created_at: group.createdAt.toISOString(),
       conversation_id: conversation.id,
     };
   },
 
-  async join(groupId: string, user: User) {
+  async join(groupId: string, user: User): Promise<Group> {
     const group = await this.getById(groupId);
 
     await prisma.groupUser.create({
@@ -85,6 +86,7 @@ export const groupService = {
       member_ids: group.groupUsers.map((gu) => gu.userId),
       created_at: group.createdAt.toISOString(),
       conversation_id: conversation.id,
+      owner: group.owner,
     };
   },
 
@@ -109,7 +111,9 @@ export const groupService = {
     const group = await prisma.group.findUniqueOrThrow({
       where: { id: Number(id) },
       include: {
-        // owner: true,
+        owner: {
+          select: publicUserSelect,
+        },
         groupUsers: {
           select: {
             userId: true,

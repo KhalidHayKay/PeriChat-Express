@@ -1,8 +1,8 @@
 import { prisma } from '../lib/prisma.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import type { ConversationSubject } from '../types/conversation.js';
-import type { Message, Message as MessageDto } from '../types/message.js';
-import type { User } from '../types/user.js';
+import type { Message } from '../types/message.js';
+import { publicUserSelect, type User } from '../types/user.js';
 
 type PrismaMessageWithSenderAndAttachments = Prisma.MessageGetPayload<{
   include: {
@@ -145,7 +145,7 @@ export const conversationService = {
   mapMessages(
     messages: PrismaMessageWithSenderAndAttachments[],
     groupId: number | null,
-  ): MessageDto[] {
+  ): Message[] {
     return messages.map((message) => ({
       id: message.id,
       content: message.content,
@@ -158,7 +158,6 @@ export const conversationService = {
         name: message.sender.name,
         email: message.sender.email,
         avatar: message.sender.avatar,
-        emailVerifiedAt: message.sender.emailVerifiedAt,
       },
       attachments: message.attachments.map((attachment) => ({
         id: attachment.id,
@@ -348,6 +347,8 @@ export const conversationService = {
         last_message_date: lastMsg?.createdAt.toISOString() ?? null,
         unread_messages_count: uc.unreadMessagesCount,
         last_message_attachment_count: lastMsg?.attachments.length ?? 0,
+        group_member_ids: null,
+        group_owner: null,
       });
     }
 
@@ -358,7 +359,12 @@ export const conversationService = {
     const groupUsers = await prisma.groupUser.findMany({
       where: { userId },
       include: {
-        group: true,
+        group: {
+          include: {
+            owner: { select: publicUserSelect },
+            groupUsers: { select: { userId: true } },
+          },
+        },
       },
     });
 
@@ -389,9 +395,14 @@ export const conversationService = {
         avatar: gu.group.avatar,
         last_message: lastMsg?.content ?? null,
         last_message_sender_id: lastMsg?.senderId ?? null,
-        last_message_date: lastMsg?.createdAt.toISOString() ?? null,
+        last_message_date:
+          lastMsg?.createdAt.toISOString() ??
+          gu.group.createdAt.toISOString() ??
+          null,
         unread_messages_count: gu.unreadMessagesCount,
         last_message_attachment_count: lastMsg?.attachments.length ?? 0,
+        group_member_ids: gu.group.groupUsers.map((gu) => gu.userId),
+        group_owner: gu.group.owner,
       });
     }
 

@@ -99,6 +99,8 @@ export const messageService = {
       last_message_date: message.created_at,
       unread_messages_count: 0,
       last_message_attachment_count: message.attachments?.length ?? 0,
+      group_member_ids: null,
+      group_owner: null,
     };
 
     return { subject, message };

@@ -3,20 +3,25 @@ import { z } from 'zod';
 import { groupService } from '../services/group.service.js';
 import { validator } from '../validator/schema.js';
 import { conversationService } from '../services/conversation.service.js';
+import { socket } from '../lib/socket.js';
+import type { Group } from '../types/group.js';
+import type { ConversationSubject } from '../types/conversation.js';
 
 export const groupController = {
   async create(req: Request, res: Response, next: NextFunction) {
+    const result = validator.group.new.safeParse(req.body);
+
+    if (!result.success) {
+      return res.status(422).json({
+        message: 'Invalid request body',
+        errors: z.treeifyError(result.error).properties,
+      });
+    }
+
     try {
-      const result = validator.group.new.safeParse(req.body);
-
-      if (!result.success) {
-        return res.status(422).json({
-          message: 'Invalid request body',
-          errors: z.treeifyError(result.error).properties,
-        });
-      }
-
       const group = await groupService.make(result.data, req.user!);
+
+      await runCreateSideEffect(group);
 
       return res
         .status(201)
@@ -85,4 +90,28 @@ export const groupController = {
       return;
     }
   },
+};
+
+const runCreateSideEffect = async (group: Group) => {
+  const io = socket.get();
+
+  const subject: ConversationSubject = {
+    id: group.conversation_id,
+    name: group.name,
+    type: 'group',
+    type_id: group.id,
+    avatar: group.avatar,
+    last_message: null,
+    last_message_sender_id: null,
+    last_message_date: group.created_at,
+    unread_messages_count: 0,
+    last_message_attachment_count: 0,
+    group_member_ids: group.member_ids,
+    group_owner: group.owner,
+  };
+
+  for (const memberId of group.member_ids) {
+    console.log(memberId);
+    io.to(`user:${memberId}`).emit('created:group', subject);
+  }
 };

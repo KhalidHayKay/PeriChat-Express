@@ -17,7 +17,15 @@ export const userService = {
       },
     });
 
-    return user;
+    return {
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar,
+      email: user.email,
+      emailVerifiedAt: user.emailVerifiedAt
+        ? user.emailVerifiedAt.toISOString()
+        : null,
+    };
   },
 
   async addOnlineUser(userId: number): Promise<void> {

@@ -10,7 +10,7 @@ ARG APP_ENV
 COPY . .
 
 RUN if [ "$APP_ENV" != "local" ]; then \
-    RUN yarn install --frozen-lockfile \
+    RUN yarn install --frozen-lockfile && \
     RUN yarn typecheck; \
     yarn build; \
     fi

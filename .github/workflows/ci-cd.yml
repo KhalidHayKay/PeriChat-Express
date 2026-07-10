@@ -47,3 +47,4 @@ jobs:
             git pull origin main
             docker compose down
             docker compose up -d --build
+            docker compose exec -T app yarn prisma migrate deploy

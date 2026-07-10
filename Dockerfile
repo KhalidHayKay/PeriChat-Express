@@ -10,10 +10,12 @@ ARG APP_ENV
 COPY . .
 
 RUN if [ "$APP_ENV" != "local" ]; then \
-    RUN yarn install --frozen-lockfile && \
-    RUN yarn typecheck; \
+    yarn install --frozen-lockfile && \
+    yarn prisma generate && \
+    yarn typecheck && \
     yarn build; \
     fi
+
 
 RUN chown -R node:node /var/www
 USER node

@@ -1,15 +1,37 @@
 import { Server } from 'socket.io';
+import type { DefaultEventsMap, Socket } from 'socket.io';
 import type { Server as HttpServer } from 'http';
+
 import { env } from '../config/env.js';
 import { sessionService } from '../services/session.service.js';
 import { userService } from '../services/user.service.js';
-import type { User } from '../types/user.js';
 import { conversationService } from '../services/conversation.service.js';
 
-let io: Server;
+import type { User } from '../types/user.js';
+
+interface SocketData {
+  user: User;
+  viewingConversation: number | null;
+}
+
+type AppSocket = Socket<
+  DefaultEventsMap,
+  DefaultEventsMap,
+  DefaultEventsMap,
+  SocketData
+>;
+
+type IOServer = Server<
+  DefaultEventsMap,
+  DefaultEventsMap,
+  DefaultEventsMap,
+  SocketData
+>;
+
+let io: IOServer;
 
 export const socket = {
-  init: (httpServer: HttpServer) => {
+  init(httpServer: HttpServer) {
     io = new Server(httpServer, {
       cors: {
         origin: env.cors.origins,
@@ -17,83 +39,122 @@ export const socket = {
       },
     });
 
-    // Auth middleware — runs before connection is established
-    io.use(async (socket, next) => {
-      const authToken = socket.handshake.auth['token'];
-      if (!authToken) return next(new Error('Unauthorized'));
-
-      const userId = await sessionService.verify(authToken);
-      if (!userId) return next(new Error('Unauthorized'));
-
-      try {
-        const user = await userService.get(Number(userId));
-        socket.data.user = user;
-        next();
-      } catch {
-        next(new Error('Unauthorized'));
-      }
+    io.use((socket, next) => {
+      void authenticate(socket, next);
     });
 
-    io.on('connection', async (socket) => {
-      const user = socket.data.user as User;
-
-      // Personal room for targeting this user directly
-      socket.join(`user:${user.id}`);
-
-      await userService.addOnlineUser(user.id);
-      const onlineUserIds = await userService.getOnlineUserIds();
-
-      // Send full online list to the connecting user only
-      socket.emit('users:online', onlineUserIds);
-      // Notify everyone else that this user came online
-      socket.broadcast.emit('user:online', { userId: user.id });
-
-      // Conversation room management
-      socket.on('conversations:join', (ids: string[]) => {
-        ids.forEach((id) => socket.join(`conversation:${id}`));
-      });
-
-      socket.on('conversations:leave', (ids: string[]) => {
-        ids.forEach((id) => socket.leave(`conversation:${id}`));
-      });
-
-      // Viewing state — used to skip unread increment for active conversation
-      socket.on(
-        'conversation:viewing',
-        ({
-          conversationId,
-          conversationType,
-          typeId,
-          unreadMessageCount,
-        }: {
-          conversationId: number;
-          conversationType: 'private' | 'group';
-          typeId: number;
-          unreadMessageCount: number;
-        }) => {
-          socket.data.viewingConversation = conversationId;
-          socket.join(`viewing:${conversationId}`);
-
-          if (unreadMessageCount > 0) {
-            conversationService.resetUnread(conversationType, typeId, user.id);
-          }
-        },
-      );
-
-      socket.on('conversation:left', (conversationId: string) => {
-        socket.data.viewingConversation = null;
-        socket.leave(`viewing:${conversationId}`);
-      });
-
-      socket.on('disconnect', async () => {
-        await userService.removeOnlineUser(user.id);
-        io.emit('user:offline', { userId: user.id });
-      });
+    io.on('connection', (socket) => {
+      void handleConnection(socket);
     });
   },
 
-  get: () => {
-    if (!io) throw new Error('Socket.IO has not been initialized.');
+  get(): IOServer {
+    if (!io) {
+      throw new Error('Socket.IO has not been initialized.');
+    }
+
     return io;
   },
 };
+
+async function authenticate(socket: AppSocket, next: (err?: Error) => void) {
+  const authToken = socket.handshake.auth['token'] as unknown;
+
+  if (typeof authToken !== 'string') {
+    return next(new Error('Unauthorized'));
+  }
+
+  const userId = await sessionService.verify(authToken);
+
+  if (!userId) {
+    return next(new Error('Unauthorized'));
+  }
+
+  try {
+    socket.data.user = await userService.get(Number(userId));
+    socket.data.viewingConversation = null;
+
+    next();
+  } catch {
+    next(new Error('Unauthorized'));
+  }
+}
+
+async function handleConnection(socket: AppSocket) {
+  const { user } = socket.data;
+
+  void socket.join(`user:${user.id}`);
+
+  await userService.addOnlineUser(user.id);
+
+  const onlineUsers = await userService.getOnlineUserIds();
+
+  socket.emit('users:online', onlineUsers);
+  socket.broadcast.emit('user:online', {
+    userId: user.id,
+  });
+
+  registerConversationHandlers(socket);
+  registerViewingHandlers(socket, user);
+  registerDisconnectHandler(socket, user);
+}
+
+function registerConversationHandlers(
+  socket: AppSocket,
+  // user: User,
+) {
+  socket.on('conversations:join', (ids: string[]) => {
+    ids.forEach((id) => {
+      void socket.join(`conversation:${id}`);
+    });
+  });
+
+  socket.on('conversations:leave', (ids: string[]) => {
+    ids.forEach((id) => {
+      void socket.leave(`conversation:${id}`);
+    });
+  });
+}
+
+function registerViewingHandlers(socket: AppSocket, user: User) {
+  socket.on(
+    'conversation:viewing',
+    ({
+      conversationId,
+      conversationType,
+      typeId,
+      unreadMessageCount,
+    }: {
+      conversationId: number;
+      conversationType: 'private' | 'group';
+      typeId: number;
+      unreadMessageCount: number;
+    }) => {
+      socket.data.viewingConversation = conversationId;
+
+      void socket.join(`viewing:${conversationId}`);
+
+      if (unreadMessageCount > 0) {
+        void conversationService.resetUnread(conversationType, typeId, user.id);
+      }
+    },
+  );
+
+  socket.on('conversation:left', (conversationId: string) => {
+    socket.data.viewingConversation = null;
+
+    void socket.leave(`viewing:${conversationId}`);
+  });
+}
+
+function registerDisconnectHandler(socket: AppSocket, user: User) {
+  socket.on('disconnect', () => {
+    void (async () => {
+      await userService.removeOnlineUser(user.id);
+
+      io.emit('user:offline', {
+        userId: user.id,
+      });
+    })();
+  });
+}

@@ -15,7 +15,7 @@ import type { ConversationSubject } from '../types/conversation.js';
 import type { User } from '../types/user.js';
 
 export const messageController = {
-  async create(req: Request, res: Response, next: NextFunction) {
+  create: async (req: Request, res: Response, next: NextFunction) => {
     const result = validator.messaging.new.safeParse({
       ...req.body,
       message_attachments: req.files ?? [],
@@ -37,9 +37,9 @@ export const messageController = {
     };
 
     try {
-      const message = await messageService.make(data, req.user!);
+      const message = await messageService.make(data, req.user);
 
-      runSideEffects(message);
+      await runSideEffects(message);
 
       return res.status(201).json({
         message: 'Message created successfully',
@@ -57,7 +57,7 @@ export const messageController = {
     }
   },
 
-  async createFirst(req: Request, res: Response, next: NextFunction) {
+  createFirst: async (req: Request, res: Response, next: NextFunction) => {
     const result = validator.messaging.first.safeParse({
       ...req.body,
       message_attachments: req.files ?? [],
@@ -79,10 +79,10 @@ export const messageController = {
     try {
       const { message, subject } = await messageService.makeWithNewConversation(
         data,
-        req.user!,
+        req.user,
       );
 
-      await runFirstMessageSideEffect(req.user!, message, subject);
+      await runFirstMessageSideEffect(req.user, message, subject);
 
       return res.status(201).json({
         message: 'Message created successfully',
@@ -135,7 +135,7 @@ const runFirstMessageSideEffect = async (
   subject: ConversationSubject,
 ) => {
   const io = socket.get();
-  io.to(`user:${user!.id}`).emit('created:conversation', {
+  io.to(`user:${user.id}`).emit('created:conversation', {
     message,
     subject,
   });

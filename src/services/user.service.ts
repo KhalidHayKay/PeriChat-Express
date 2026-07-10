@@ -33,10 +33,10 @@ export const userService = {
   },
 
   async getOnlineUserIds(): Promise<number[]> {
-    return redis.sMembers(ONLINE_USERS_KEY);
+    return await redis.sMembers(ONLINE_USERS_KEY);
   },
 
   async removeOnlineUser(userId: number): Promise<void> {
-    redis.sRem(ONLINE_USERS_KEY, userId);
+    await redis.sRem(ONLINE_USERS_KEY, userId);
   },
 };

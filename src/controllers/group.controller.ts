@@ -8,7 +8,7 @@ import type { Group } from '../types/group.js';
 import type { ConversationSubject } from '../types/conversation.js';
 
 export const groupController = {
-  async create(req: Request, res: Response, next: NextFunction) {
+  create: async (req: Request, res: Response, next: NextFunction) => {
     const result = validator.group.new.safeParse(req.body);
 
     if (!result.success) {
@@ -19,9 +19,9 @@ export const groupController = {
     }
 
     try {
-      const group = await groupService.make(result.data, req.user!);
+      const group = await groupService.make(result.data, req.user);
 
-      await runCreateSideEffect(group);
+      runCreateSideEffect(group);
 
       return res
         .status(201)
@@ -32,11 +32,9 @@ export const groupController = {
     }
   },
 
-  async getCandidates(req: Request, res: Response, next: NextFunction) {
+  getCandidates: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const candidates = await conversationService.getConversingUsers(
-        req.user!,
-      );
+      const candidates = await conversationService.getConversingUsers(req.user);
 
       return res.json({
         message: 'Operation successful',
@@ -48,7 +46,7 @@ export const groupController = {
     }
   },
 
-  async join(req: Request, res: Response, next: NextFunction) {
+  join: async (req: Request, res: Response, next: NextFunction) => {
     const groupId = req.params['id']?.toString();
 
     if (!groupId) {
@@ -58,7 +56,7 @@ export const groupController = {
     }
 
     try {
-      const group = await groupService.join(groupId, req.user!);
+      const group = await groupService.join(groupId, req.user);
 
       return res.json({
         message: 'Group joined successful',
@@ -70,7 +68,7 @@ export const groupController = {
     }
   },
 
-  async leave(req: Request, res: Response, next: NextFunction) {
+  leave: async (req: Request, res: Response, next: NextFunction) => {
     const groupId = req.params['id']?.toString();
 
     if (!groupId) {
@@ -80,7 +78,7 @@ export const groupController = {
     }
 
     try {
-      await groupService.leave(groupId, req.user!);
+      await groupService.leave(groupId, req.user);
 
       return res.json({
         message: 'Operation successful',
@@ -92,7 +90,7 @@ export const groupController = {
   },
 };
 
-const runCreateSideEffect = async (group: Group) => {
+const runCreateSideEffect = (group: Group) => {
   const io = socket.get();
 
   const subject: ConversationSubject = {

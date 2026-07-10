@@ -27,7 +27,8 @@ export const authMiddleware: RequestHandler = async (
 
     try {
       user = await userService.get(Number(userId));
-    } catch (err) {
+    } catch (error) {
+      console.log(error);
       res.status(401).json({ message: 'Request unauthorized' });
       return;
     }

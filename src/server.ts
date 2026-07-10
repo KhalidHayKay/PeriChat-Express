@@ -4,6 +4,7 @@ import { redis } from './lib/redis.js';
 import app from './app.js';
 import { socket } from './lib/socket.js';
 import dotenv from 'dotenv';
+import { promisify } from 'node:util';
 
 dotenv.config();
 
@@ -18,27 +19,36 @@ const server = httpServer.listen(env.app.port, () => {
   console.info(`Environment: ${env.app.env}`);
 });
 
+const closeServer = promisify(server.close.bind(server));
+
 const shutdown = async (signal: string) => {
   console.info(`${signal} received, starting graceful shutdown`);
 
-  server.close(async (err) => {
+  const timeout = setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 30_000);
+
+  try {
+    await closeServer();
     await redis.disconnect();
 
-    if (err) {
-      console.error('Error during shutdown', err);
-      process.exit(1);
-    }
+    clearTimeout(timeout);
 
     console.info('Server closed successfully');
     process.exit(0);
-  });
+  } catch (err) {
+    clearTimeout(timeout);
 
-  // Force shutdown after 30 seconds if graceful shutdown fails
-  setTimeout(() => {
-    console.error('Forced shutdown after timeout');
+    console.error('Error during shutdown', err);
     process.exit(1);
-  }, 30000);
+  }
 };
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
+
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
+});

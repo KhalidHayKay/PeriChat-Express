@@ -152,7 +152,7 @@ export const messageService = {
       return null;
     }
 
-    let attachments: Attachment[] = [];
+    const attachments: Attachment[] = [];
 
     for (const file of files) {
       const newAttachment = await prisma.messageAttachment.create({

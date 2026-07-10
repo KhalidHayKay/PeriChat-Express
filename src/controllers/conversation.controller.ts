@@ -2,9 +2,9 @@ import { conversationService } from '../services/conversation.service.js';
 import type { NextFunction, Request, Response } from 'express';
 import { groupService } from '../services/group.service.js';
 export const conversationController = {
-  async get(req: Request, res: Response, next: NextFunction) {
+  get: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const subjects = await conversationService.getSubjects(req.user?.id!);
+      const subjects = await conversationService.getSubjects(req.user.id);
 
       return res.json({
         message: 'Successful',
@@ -16,7 +16,7 @@ export const conversationController = {
     }
   },
 
-  async getMessages(req: Request, res: Response, next: NextFunction) {
+  getMessages: async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params['id']?.toString();
 
     if (!id) {
@@ -26,7 +26,7 @@ export const conversationController = {
     try {
       const result = await conversationService.getMessages(
         Number(id),
-        req.user!,
+        req.user,
       );
 
       return res.json({
@@ -42,26 +42,26 @@ export const conversationController = {
     }
   },
 
-  async getOlderMessages(req: Request, res: Response, next: NextFunction) {
-    const id = req.params['id']?.toString();
-    const lastMessageId = req.query['last_message_id']?.toString();
+  getOlderMessages: async (req: Request, res: Response, next: NextFunction) => {
+    const id = Number(req.params['id']);
+    const lastMessageId = Number(req.query['last_message_id']);
     const limit = Number(req.query['limit'] ?? 10);
 
-    if (!id) {
-      return res.status(400).json({ message: "route param 'id' is required" });
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Invalid route param 'id'" });
     }
 
-    if (!lastMessageId) {
+    if (!Number.isInteger(lastMessageId) || lastMessageId <= 0) {
       return res
         .status(400)
-        .json({ message: "query param 'last_message_id' is required" });
+        .json({ message: "Invalid query param 'last_message_id'" });
     }
 
     try {
       const result = await conversationService.getOlderMessages(
         Number(id),
         Number(lastMessageId),
-        req.user!,
+        req.user,
         limit,
       );
 
@@ -78,12 +78,19 @@ export const conversationController = {
     }
   },
 
-  async getSuggestions(req: Request, res: Response, next: NextFunction) {
-    try {
-      const type = req.query['type']?.toString();
+  getSuggestions: async (req: Request, res: Response, next: NextFunction) => {
+    const type =
+      typeof req.query['type'] === 'string' ? req.query['type'] : undefined;
 
-      const groups = await groupService.getJoinable(req.user!);
-      const users = await conversationService.getNonConversingUsers(req.user!);
+    if (type && type !== 'group' && type !== 'user') {
+      return res
+        .status(422)
+        .json({ message: "invalid value for query param 'type'" });
+    }
+
+    try {
+      const groups = await groupService.getJoinable(req.user);
+      const users = await conversationService.getNonConversingUsers(req.user);
 
       let data;
 

@@ -5,9 +5,10 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import bcrypt from 'bcrypt';
 import z from 'zod';
 import { sessionService } from '../services/session.service.js';
+import type { User } from '../types/user.js';
 
 export const authController = {
-  async login(req: Request, res: Response, next: NextFunction) {
+  login: async (req: Request, res: Response, next: NextFunction) => {
     const result = validator.auth.login.safeParse(req.body);
 
     if (!result.success) {
@@ -43,13 +44,21 @@ export const authController = {
         });
       }
 
-      const { password, ...safeUserData } = user;
-
       const token = await sessionService.create(String(user.id));
+
+      const authUser: User = {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        email: user.email,
+        emailVerifiedAt: user.emailVerifiedAt
+          ? user.emailVerifiedAt.toISOString()
+          : null,
+      };
 
       return res.json({
         message: 'Login successful',
-        user: safeUserData,
+        user: authUser,
         token,
       });
     } catch (err: unknown) {
@@ -58,7 +67,7 @@ export const authController = {
     }
   },
 
-  async register(req: Request, res: Response, next: NextFunction) {
+  register: async (req: Request, res: Response, next: NextFunction) => {
     const result = validator.auth.register.safeParse(req.body);
 
     if (!result.success) {
@@ -108,9 +117,9 @@ export const authController = {
     }
   },
 
-  async logout(req: Request, res: Response, next: NextFunction) {
+  logout: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await sessionService.destroy(req?.authToken!);
+      const result = await sessionService.destroy(req?.authToken);
       if (result === 1) {
         return res.json({ message: 'Logout successful' });
       } else {

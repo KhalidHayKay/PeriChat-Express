@@ -16,6 +16,8 @@ jobs:
         run: corepack enable && corepack prepare yarn@1.22.22 --activate
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+      - name: Generate Prisma Clients
+        run: yarn prisma generate
       - name: Typecheck
         run: yarn typecheck
       - name: Lint

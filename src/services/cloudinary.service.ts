@@ -13,7 +13,13 @@ export const cloudinaryService = {
         },
         (error, result) => {
           if (error) {
-            reject(error);
+            const err = new Error(error.message ?? 'Cloudinary upload failed.');
+            Object.assign(err, {
+              name: error.name,
+              httpCode: error.http_code,
+              requestId: error.request_id,
+            });
+            reject(err);
             return;
           }
 

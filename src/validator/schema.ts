@@ -28,7 +28,7 @@ const newMessageSchema = z
         z.object({
           originalname: z.string(),
           mimetype: z.string(),
-          size: z.number().max(102400),
+          size: z.number().max(10 * 102400),
           buffer: z.instanceof(Buffer),
         }),
       )
@@ -56,7 +56,7 @@ const firstMessageSchema = z
         z.object({
           originalname: z.string(),
           mimetype: z.string(),
-          size: z.number().max(102400),
+          size: z.number().max(10 * 102400),
           buffer: z.instanceof(Buffer),
         }),
       )

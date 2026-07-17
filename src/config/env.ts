@@ -24,6 +24,12 @@ interface EnvConfig {
   cors: {
     origins: string[];
   };
+
+  cloudinary: {
+    cloudName: string;
+    apiKey: string;
+    apiSecret: string;
+  };
 }
 
 export const env: EnvConfig = {
@@ -54,5 +60,11 @@ export const env: EnvConfig = {
       .split(',')
       .map((origin) => origin.trim())
       .filter(Boolean),
+  },
+
+  cloudinary: {
+    cloudName: process.env['CLOUDINARY_CLOUD_NAME'] ?? '',
+    apiKey: process.env['CLOUDINARY_API_KEY'] ?? '',
+    apiSecret: process.env['CLOUDINARY_API_SECRET'] ?? '',
   },
 };

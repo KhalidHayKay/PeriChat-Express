@@ -7,6 +7,8 @@ import type {
 import type { Attachment, Message } from '../types/message.js';
 import type { User } from '../types/user.js';
 import type { ConversationSubject } from '../types/conversation.js';
+import { cloudinaryService } from './cloudinary.service.js';
+import { BadRequestError } from '../errors/error-types.js';
 
 export const messageService = {
   async make(data: NewMessageData, user: User): Promise<Message> {
@@ -56,9 +58,24 @@ export const messageService = {
     data: NewMessageWithConversationData,
     user: User,
   ): Promise<{ subject: ConversationSubject; message: Message }> {
-    const conversation = await prisma.conversation.create({
-      data: { groupId: null },
+    const existingConversation = await prisma.conversation.findFirst({
+      where: {
+        groupId: null,
+        userConversations: {
+          every: {
+            userId: {
+              in: [user.id, data.receiver_id],
+            },
+          },
+        },
+      },
     });
+
+    if (existingConversation) {
+      throw new BadRequestError(
+        'A conversation between these users already exists',
+      );
+    }
 
     const receiver = await prisma.user.findUniqueOrThrow({
       where: { id: data.receiver_id },
@@ -68,6 +85,10 @@ export const messageService = {
         avatar: true,
         email: true,
       },
+    });
+
+    const conversation = await prisma.conversation.create({
+      data: { groupId: null },
     });
 
     await prisma.userConversation.createMany({
@@ -155,31 +176,42 @@ export const messageService = {
     const attachments: Attachment[] = [];
 
     for (const file of files) {
-      const newAttachment = await prisma.messageAttachment.create({
-        data: {
-          name: file.originalname,
-          path: '',
-          mime: file.mimetype,
-          size: file.size,
-          messageId: messageId,
-        },
-        select: {
-          id: true,
-          name: true,
-          path: true,
-          mime: true,
-          size: true,
-        },
-      });
+      try {
+        const { secure_url } = await cloudinaryService.upload(
+          file.buffer,
+          'message_attachment',
+        );
 
-      attachments?.push({
-        id: newAttachment.id,
-        message_id: messageId,
-        name: newAttachment.name,
-        mime: newAttachment.mime,
-        size: newAttachment.size,
-        url: newAttachment.path,
-      });
+        const newAttachment = await prisma.messageAttachment.create({
+          data: {
+            name: file.originalname,
+            path: secure_url,
+            mime: file.mimetype,
+            size: file.size,
+            messageId: messageId,
+          },
+          select: {
+            id: true,
+            name: true,
+            path: true,
+            mime: true,
+            size: true,
+          },
+        });
+
+        attachments?.push({
+          id: newAttachment.id,
+          message_id: messageId,
+          name: newAttachment.name,
+          mime: newAttachment.mime,
+          size: newAttachment.size,
+          url: newAttachment.path,
+        });
+      } catch (error) {
+        console.error(
+          `Message attachment upload failed${error instanceof Error && ': ' + error.message}`,
+        );
+      }
     }
 
     return attachments;

@@ -5,7 +5,7 @@ import multer from 'multer';
 const router = Router();
 const upload = multer();
 
-router.use(upload.array('attachments', 10));
+router.use(upload.array('attachments[]', 10));
 
 router.post('/', messageController.create);
 router.post('/first', messageController.createFirst);

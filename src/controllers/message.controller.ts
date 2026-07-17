@@ -2,7 +2,6 @@ import type { NextFunction, Request, Response } from 'express';
 import { validator } from '../validator/schema.js';
 import { messageService } from '../services/message.service.js';
 import z from 'zod';
-import { BadRequestError } from '../errors/error-types.js';
 import type {
   NewMessageData,
   NewMessageWithConversationData,
@@ -46,12 +45,6 @@ export const messageController = {
         data: message,
       });
     } catch (error) {
-      if (error instanceof BadRequestError) {
-        return res.status(400).json({
-          message: `Invalid request. ${error.message}`,
-        });
-      }
-
       next(error);
       return;
     }
@@ -89,12 +82,6 @@ export const messageController = {
         data: { message, conversation: subject },
       });
     } catch (error) {
-      if (error instanceof BadRequestError) {
-        return res.status(400).json({
-          message: `Invalid request. ${error.message}`,
-        });
-      }
-
       next(error);
       return;
     }

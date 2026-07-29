@@ -2,6 +2,14 @@
 
 A real-time messaging backend built with Express, TypeScript, Prisma, PostgreSQL, Redis, and Socket.IO. It powers private conversations, group chats, media attachments, unread message tracking, and live real-time messaging for the PeriChat application.
 
+## 🌍 Try it Live
+
+[https://perichat-livid.vercel.app](https://perichat-livid.vercel.app)
+
+Frontend Repository: [https://github.com/KhalidHayKay/PeriChat](https://github.com/KhalidHayKay/PeriChat)
+
+---
+
 ## What it does
 
 - Handles user authentication with token-based sessions

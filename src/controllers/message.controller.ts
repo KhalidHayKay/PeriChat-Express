@@ -30,9 +30,10 @@ export const messageController = {
     const data: NewMessageData = {
       conversation_id: Number(result.data.conversation_id),
       content: result.data.content,
+      message_attachments: result.data.message_attachments,
+      sender_id: req.user.id,
       receiver_id: Number(result.data.receiver_id),
       group_id: Number(result.data.group_id),
-      message_attachments: result.data.message_attachments,
     };
 
     try {
@@ -64,22 +65,32 @@ export const messageController = {
     }
 
     const data: NewMessageWithConversationData = {
-      receiver_id: Number(result.data.receiver_id),
-      content: result.data.content,
       message_attachments: result.data.message_attachments,
+      content: result.data.content,
+      sender_id: req.user.id,
+      receiver_id: Number(result.data.receiver_id),
     };
 
     try {
-      const { message, subject } = await messageService.makeWithNewConversation(
-        data,
+      const { message, receiver } =
+        await messageService.makeWithNewConversation(data, req.user);
+
+      const { senderSubject, receiverSubject } = constructParticipantSubject(
+        message,
         req.user,
+        receiver,
       );
 
-      await runFirstMessageSideEffect(req.user, message, subject);
+      await runFirstMessageSideEffect(
+        req.user,
+        message,
+        senderSubject,
+        receiverSubject,
+      );
 
       return res.status(201).json({
         message: 'Message created successfully',
-        data: { message, conversation: subject },
+        data: { message, conversation: senderSubject },
       });
     } catch (error) {
       next(error);
@@ -119,17 +130,59 @@ const runSideEffects = async (message: Message) => {
 const runFirstMessageSideEffect = async (
   user: User,
   message: Message,
-  subject: ConversationSubject,
+  senderSubject: ConversationSubject,
+  receiverSubject: ConversationSubject,
 ) => {
   const io = socket.get();
   io.to(`user:${user.id}`).emit('created:conversation', {
     message,
-    subject,
+    subject: senderSubject,
   });
   io.to(`user:${message.receiver_id}`).emit('created:conversation', {
     message,
-    subject,
+    subject: receiverSubject,
   });
 
   await conversationService.incrementUnread(message.receiver_id!, message);
+};
+
+const constructParticipantSubject = (
+  message: Message,
+  user: User,
+  receiver: User,
+): {
+  senderSubject: ConversationSubject;
+  receiverSubject: ConversationSubject;
+} => {
+  const senderSubject: ConversationSubject = {
+    type: 'private',
+    id: message.conversation_id,
+    type_id: receiver.id,
+    name: receiver.name,
+    avatar: receiver.avatar,
+    last_message: message.content,
+    last_message_sender_id: user.id,
+    last_message_date: message.created_at,
+    unread_messages_count: 0,
+    last_message_attachment_count: message.attachments?.length ?? 0,
+    group_member_ids: null,
+    group_owner: null,
+  };
+
+  const receiverSubject: ConversationSubject = {
+    type: 'private',
+    id: message.conversation_id,
+    type_id: user.id,
+    name: user.name,
+    avatar: user.avatar,
+    last_message: message.content,
+    last_message_sender_id: user.id,
+    last_message_date: message.created_at,
+    unread_messages_count: 0,
+    last_message_attachment_count: message.attachments?.length ?? 0,
+    group_member_ids: null,
+    group_owner: null,
+  };
+
+  return { senderSubject, receiverSubject };
 };

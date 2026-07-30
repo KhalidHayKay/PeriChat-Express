@@ -8,15 +8,17 @@ export type NewMessageAttachmentData = {
 export type NewMessageData = {
   conversation_id: number;
   content?: string | undefined;
+  message_attachments?: NewMessageAttachmentData[] | undefined;
+  sender_id: number;
   receiver_id?: number | undefined;
   group_id?: number | undefined;
-  message_attachments?: NewMessageAttachmentData[] | undefined;
 };
 
 export type NewMessageWithConversationData = {
   content?: string | undefined;
-  receiver_id: number;
   message_attachments?: NewMessageAttachmentData[] | undefined;
+  sender_id: number;
+  receiver_id: number;
 };
 
 export type NewGroupData = {

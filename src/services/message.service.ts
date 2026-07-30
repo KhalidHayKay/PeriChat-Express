@@ -6,7 +6,6 @@ import type {
 } from '../dtos/dto.js';
 import type { Attachment, Message } from '../types/message.js';
 import type { User } from '../types/user.js';
-import type { ConversationSubject } from '../types/conversation.js';
 import { cloudinaryService } from './cloudinary.service.js';
 import { BadRequestError } from '../errors/error-types.js';
 
@@ -57,7 +56,7 @@ export const messageService = {
   async makeWithNewConversation(
     data: NewMessageWithConversationData,
     user: User,
-  ): Promise<{ subject: ConversationSubject; message: Message }> {
+  ): Promise<{ message: Message; receiver: User }> {
     const existingConversation = await prisma.conversation.findFirst({
       where: {
         groupId: null,
@@ -109,22 +108,7 @@ export const messageService = {
       data.message_attachments,
     );
 
-    const subject: ConversationSubject = {
-      type: 'private',
-      id: conversation.id,
-      type_id: receiver.id,
-      name: receiver.name,
-      avatar: receiver.avatar,
-      last_message: message.content,
-      last_message_sender_id: user.id,
-      last_message_date: message.created_at,
-      unread_messages_count: 0,
-      last_message_attachment_count: message.attachments?.length ?? 0,
-      group_member_ids: null,
-      group_owner: null,
-    };
-
-    return { subject, message };
+    return { message, receiver };
   },
 
   async createMessage(
